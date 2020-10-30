@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
+from random import choice
 
 from configs import QuestDB, Pointers
 
@@ -59,6 +60,43 @@ def load_icon_image(img_index, height=None, width=None):
     return img.resize(new_dimensions)
 
 
+def get_img_color_avg(img):
+    sum_r, sum_b, sum_g = 0, 0, 0
+    count = 0
+    for r, g, b in img.getdata():
+        sum_r += r
+        sum_g += g
+        sum_b += b
+        count += 1
+
+    sum_r //= count
+    sum_g //= count
+    sum_b //= count
+
+    return f'#{hex(sum_r*255*255 + sum_g*255 + sum_b)[2:]:0<6}'
+
+
+def get_most_common_color(img, border_width=1):
+    colors = {}
+    color = 0
+    width = img.width
+    height = img.height
+    for n, pixels in enumerate(img.getdata()):
+        x, y = n % width, n // height
+        if y < border_width or y >= width - border_width or x < border_width or x >= height - border_width:
+            r, g, b = pixels
+            c = r*256*256 + g*256 + b
+            try:
+                colors[c] += 1
+            except KeyError:
+                colors.update({c: 1})
+
+    for c in sorted(colors.items(), key=lambda i: i[1], reverse=True):
+        color = c[0]
+
+    return f'#{hex(color)[2:]:0<6}'
+
+
 class Button(tk.Button):
     def __init__(self, parent, **kw):
         super(Button, self).__init__(parent)
@@ -88,7 +126,7 @@ class Label(tk.Label):
         super(Label, self).__init__(parent)
         self.configure(
             bg='pink',
-            fg='black',
+            fg='white',
             font=FONT,
         )
         self.config(**kw)
@@ -304,21 +342,30 @@ class MainGUI(tk.Tk):
         else:
             _, name, points, req, time, *_, quest_img, quest_icon = db.get_quest_by_id(_id)
 
-            name_img = ImageTk.PhotoImage(load_quest_image(quest_img))
+            img = load_quest_image(quest_img)
+            bg = get_most_common_color(img)
+            r, g, b = [int(x, 16) for x in (bg[1:3], bg[3:5], bg[5:])]
+            while (r+g+b)//3 > 40:
+                r *= .95
+                g *= .95
+                b *= .95
+                bg = f'#{hex((int(r)*256*256 + int(g)*256 + int(b)))[2:]}'
+
+            name_img = ImageTk.PhotoImage(img, 2)
             points_img = ImageTk.PhotoImage(load_icon_image(66, height=40))
             req_img = ImageTk.PhotoImage(load_icon_image(quest_icon, height=40))
             time_img = ImageTk.PhotoImage(load_icon_image(11, height=40))
 
-            name_label.configure(image=name_img, text=name)
+            name_label.configure(image=name_img, text=name, bg=bg)
             name_label.image = name_img
 
-            points_label.configure(image=points_img, text=f'+{points}')
+            points_label.configure(image=points_img, text=f'+{points}', bg=bg)
             points_label.image = points_img
 
-            req_label.configure(image=req_img, text=f'0 / {req}')
+            req_label.configure(image=req_img, text=f'0 / {req}', bg=bg)
             req_label.image = req_img
 
-            time_label.configure(image=time_img, text=time)
+            time_label.configure(image=time_img, text=time, bg=bg)
             time_label.image = time_img
 
     def refresh_details2(self):
