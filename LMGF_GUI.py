@@ -226,13 +226,13 @@ def unbind_invert(widget: tk.Widget):
 
 
 def load_quest_image(img_index):
-    path = f'imgs\\quests\\{img_index}.png'
+    path = f'imgs\\quests\\{int(img_index):03d}.png'
     img = Image.open(path)
     return img
 
 
 def load_icon_image(img_index):
-    path = f'imgs\\icons\\{img_index}.png'
+    path = f'imgs\\icons\\{int(img_index):03d}.png'
 
 
 class Button(tk.Button):
@@ -435,20 +435,35 @@ class MainGUI(tk.Tk):
 
         if not _id:
             name_label.configure(image=None, text='')
+            name_label.image = None
+
             points_label.configure(image=None, text='')
+            points_label.image = None
+
             req_label.configure(image=None, text='')
+            req_label.image = None
+
             time_label.configure(image=None, text='')
+            time_label.image = None
         else:
             _, name, points, req, time, *_, quest_img, quest_icon = db.get_quest_by_id(_id)
 
             name_img = ImageTk.PhotoImage(load_quest_image(quest_img))
-
-
+            points_img = ImageTk.PhotoImage(load_quest_image())
+            req_img = ImageTk.PhotoImage(load_quest_image(quest_icon))
+            time_img = ImageTk.PhotoImage(load_quest_image())
 
             name_label.configure(image=name_img, text=name)
+            name_label.image = name_img
+
             points_label.configure(image=None, text=points)
+            points_label.image = None
+
             req_label.configure(image=None, text=req)
+            req_label.image = None
+
             time_label.configure(image=None, text=time)
+            time_label.image = None
         # self.name_var1.set(name)
         # self.points_var1.set(points)
         # self.req_var1.set(req)
