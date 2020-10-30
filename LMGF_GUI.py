@@ -1,45 +1,16 @@
 # -*- coding: utf-8 -*-
 import tkinter as tk
-import ctypes
-import threading
 from tkinter import ttk
+from PIL import Image, ImageTk
 
 from configs import QuestDB, Pointers
 
 db = QuestDB()
-quests = db.quest_db
-selected_quests = db.selected
-'''tab_names = ['Caixa Misteriosa', 'Monstro', 'Eventos', 'Poder', 'Heróis', 'Coleta', 'Missões', 'Pacotes',
-             'Labirinto', 'Ninho', 'Familiar', 'Magnatas', 'Pesquisa', 'Aleatórias', 'Suprimento',
-             'Cargueiro', 'Outras']'''
-tab_names = set((quest[6] for quest in quests))
-tab_names = sorted([tab_name for tab_name in tab_names if tab_name is not None])
 pointers = Pointers()
 
-screen_height = ctypes.windll.user32.GetSystemMetrics(1)
-if screen_height < 800:
-    detail_rely = .032
-    list_box_height = 12
-    p_frame_placement = 321
-    detail_placement = p_frame_placement - detail_rely
-    root_geometry = '1210x635'
-
-    c_font1_size = 12
-    c_font2_size = 9
-    _pad = 1
-else:
-    detail_rely = .027
-    list_box_height = 17
-    p_frame_placement = 451
-    detail_placement = p_frame_placement - detail_rely
-    root_geometry = '1210x760+50+50'
-
-    c_font1_size = 15
-    c_font2_size = 12
-    _pad = 10
 
 
-class MainGUI:
+'''class MainGUI:
     def __init__(self):
         self.active_button = None
 
@@ -134,7 +105,7 @@ class MainGUI:
         frame = tk.Frame(self.details_frame, bg=bg, relief='flat')
         frame.place(y=y-7, relx=x, relwidth=width, relheight=height, )
 
-        img = tk.PhotoImage(master=frame, file='Imgs\\031.png')
+        img = tk.PhotoImage(master=frame, file='imgs\\031.png')
         img_label = tk.Label(frame, bg='#242424', image=img, borderwidth=0)
         img_label.grid(row=0, column=0, sticky='nsew', pady=8, ipady=2, ipadx=2)
 
@@ -169,9 +140,9 @@ class MainGUI:
             _, name, points, req, time, *_, image = db.get_quest_by_id(_id)
 
             if image:
-                self.details1['img'].configure(file=f'Imgs\\{image:03d}.png')
+                self.details1['img'].configure(file=f'imgs\\{image:03d}.png')
             else:
-                self.details1['img'].configure(file=f'Imgs\\{0:03d}.png')
+                self.details1['img'].configure(file=f'imgs\\{0:03d}.png')
 
             wrapper_length = 29
             if len(name) > wrapper_length:
@@ -192,7 +163,7 @@ class MainGUI:
             self.details1['req'].config(text='0 / ' + req)
             self.details1['time'].config(text=time)
         else:
-            self.details1['img'].configure(file=f'Imgs\\{0:03d}.png')
+            self.details1['img'].configure(file=f'imgs\\{0:03d}.png')
             self.details1['img_label'].configure(bg='#242424')
             self.details1['name'].config(text='\n')
             self.details1['points'].config(text='')
@@ -210,9 +181,9 @@ class MainGUI:
             _, name, points, req, time, *_, image = db.get_quest_by_id(_id)
 
             if image:
-                self.details2['img'].configure(file=f'Imgs\\{image:03d}.png')
+                self.details2['img'].configure(file=f'imgs\\{image:03d}.png')
             else:
-                self.details2['img'].configure(file=f'Imgs\\{0:03d}.png')
+                self.details2['img'].configure(file=f'imgs\\{0:03d}.png')
 
             wrapper_length = 29
             if len(name) > wrapper_length:
@@ -229,7 +200,7 @@ class MainGUI:
             self.details2['time'].config(text=time)
 
         else:
-            self.details2['img'].configure(file=f'Imgs\\{0:03d}.png')
+            self.details2['img'].configure(file=f'imgs\\{0:03d}.png')
             self.details2['img_label'].grid_configure(ipadx=0, ipady=0)
             self.details2['name'].config(text='\n')
             self.details2['points'].config(text='')
@@ -238,125 +209,255 @@ class MainGUI:
 
         self.up2 = self.root.after(100, self.updater2)
 
-    def insert_selected(self):
-        for quest in selected_quests:
-            text = str(f'{quest[1]}, +{quest[2]}')
-            self.selected_lb.insert('end', text)
-            self.selected_quests_ids.append(int(quest[0]))
+'''
 
-    def create_tabs2(self):
-        tabs_frame = tk.Frame(self.root, bg='#262626')
-        tabs_frame.pack(fill='x')
-        separator = tk.Frame(self.root, bg='#ffffff', height='2')
-        separator.pack(fill='x')
 
-        for n, tab in enumerate(tab_names):
-            button = tk.Button(tabs_frame, text=tab, bg='#262626', fg='#ffffff', relief='flat', padx=2,
-                               font='-size 9', anchor='center')
-            button['command'] = lambda arg1=tab, arg2=button: self.refresh_tabs(arg1, arg2)
+def invert_on_hover(widget: tk.Widget):
+    fg = widget.cget('fg')
+    bg = widget.cget('bg')
 
-            button.grid(row=0, column=n)
+    widget.bind('<Enter>', lambda e: widget.configure(fg=bg, bg=fg))
+    widget.bind('<Leave>', lambda e: widget.configure(fg=fg, bg=bg))
 
-        lb_frame = tk.Frame(self.rootframe, bg='green')
-        lb_frame.place(relx=0, rely=0, relwidth=.75, relheight=p_frame_placement,)
-        lb_frame.columnconfigure(0, minsize=890)
-        lb_frame.columnconfigure(1, minsize=18)
 
-        self.scrollbar = ttk.Scrollbar(lb_frame, style='Vertical.TScrollbar')
-        self.scrollbar.grid(row=0, column=1, sticky='nsew')
+def unbind_invert(widget: tk.Widget):
+    widget.bind('<Enter>', lambda e: None)
+    widget.bind('<Leave>', lambda e: None)
 
-        listbox = tk.Listbox(lb_frame, bg='#242424', fg='#ffffff', activestyle='none', justify='left',
-                             relief='flat', selectmode='extended', font='-family {Courier New} -size 14',
-                             height=list_box_height, selectbackground='#a3e3a3', selectforeground='#020202',
-                             borderwidth=5, highlightcolor='black', highlightbackground='black', selectborderwidth=2,
-                             highlightthickness=0, yscrollcommand=self.scrollbar.set)
 
-        listbox.grid(row=0, column=0, sticky='nsew')
-        self.scrollbar.config(command=listbox.yview)
+def load_quest_image(img_index):
+    path = f'imgs\\quests\\{img_index}.png'
+    img = Image.open(path)
+    return img
 
-        return listbox
 
-    def refresh_tabs(self, tab_name, button):
-        if button == self.active_button:
-            return
+def load_icon_image(img_index):
+    path = f'imgs\\icons\\{img_index}.png'
 
-        if isinstance(button, tk.Button):
-            button.config(bg='#ffffff', fg='black', font='-size 9 -weight bold', relief='flat')
-            if isinstance(self.active_button, tk.Button):
-                self.active_button.config(bg='#262626', fg='white', font='-size 9', relief='flat')
 
-        self.main_listbox.delete(0, 'end')
-        # print(tab_name)
-        result = db.cursor.execute('SELECT * from quests where tab_name = ?', (tab_name,)).fetchall()
-        names = list(set([item[1] for item in result]))
-        names.sort()
-        for name in names:
-            for quest in quests:
-                if quest[6] == tab_name and quest[1] == name:
-                    string = f'{quest[0]:<3}| {quest[1]:^67} | +{quest[2]:^3} |'
-                    self.main_listbox.insert(tk.END, string)
-        self.active_button = button
+class Button(tk.Button):
+    def __init__(self, parent, **kw):
+        super(Button, self).__init__(parent, **kw)
+        self.configure(
+            bg='#262626',
+            fg='#ffffff',
+            relief='flat',
+            font='-size 9',
+            anchor='center',
+            cursor='hand2',
+        )
+        invert_on_hover(self)
 
-    def get_selected_items(self):
-        indexes = self.main_listbox.curselection()
-        if indexes:
-            items = self.main_listbox.get(indexes[0], indexes[::-1][0])
-            result = []
-            for item in items:
-                text_list = item.split('|')
-                text_list = [str(string).strip() for string in text_list]
-                _id = int(text_list[0]) if text_list[0] else -1
-                result.append([f'{text_list[1]}, {text_list[2]}', _id])
 
-            return result
-        return []
+class TreeView(ttk.Treeview):
+    def __init__(self, parent, **kw):
+        super(TreeView, self).__init__(parent, **kw)
+        self.configure(
+            selectmode='extended'
+        )
+        print(self.keys())
+
+
+class Label(tk.Label):
+    def __init__(self, parent, **kw):
+        super(Label, self).__init__(parent, **kw)
+        self.configure(
+            bg='pink',
+            fg='black',
+        )
+
+
+class MainGUI(tk.Tk):
+    def __init__(self):
+        super(MainGUI, self).__init__()
+        self.geometry('1210x670')
+
+        self.last_button = None
+
+        self.main_treeview = TreeView(None)
+        self.focused_item = None
+
+        self.sel_treeview = TreeView(None)
+
+        self.name_var1 = tk.StringVar()
+        self.points_var1 = tk.StringVar()
+        self.req_var1 = tk.StringVar()
+        self.time_var1 = tk.StringVar()
+
+        self.tabs_frame = tk.Frame(bg='red')
+        self.tabs_frame.place(x=0, y=0, relwidth=1, height=26)
+
+        self.treeview_frame = tk.Frame(bg='yellow')
+        self.treeview_frame.place(x=0, y=26, width=900, height=410)
+
+        self.selected_quests_frame = tk.Frame(bg='blue')
+        self.selected_quests_frame.place(x=0, y=410+26, height=670-410-26, width=450)
+
+        self.buttons_frame = tk.Frame(bg='orange')
+        self.buttons_frame.place(x=900, y=410+26, height=670-410-26, width=1210-900)
+
+        self.details_frame1 = tk.Frame(bg='cyan')
+        self.details_frame1.place(x=900, y=26, width=1210-900, height=410)
+
+        self.details_frame2 = tk.Frame(bg='purple')
+        self.details_frame2.place(x=450, y=410+26, height=670-410-26, width=450)
+
+        self.populate_tab_frame()
+        self.populate_treeview_frame()
+        self.populate_selected_frame()
+        self.populate_buttons_frame()
+        self.populate_details_frame1()
+        self.populate_details_frame2()
+        self.change_listener()
+
+    def populate_tab_frame(self):
+        for tab in db.get_categories():
+            button = Button(self.tabs_frame, text=tab)
+            button['command'] = lambda t=tab, b=button: self.tab_button_command(t, b)
+            button.pack(side='left')
+
+    def populate_treeview_frame(self):
+        scrollbar = tk.Scrollbar(self.treeview_frame, orient='vertical')
+        scrollbar.pack(side='right', fill='y')
+
+        treeview = self.main_treeview = TreeView(self.treeview_frame, displaycolumns='#all', yscrollcommand=scrollbar.set)
+        self.main_treeview['columns'] = (
+            'Name', 'Points', 'Requirements'
+        )
+        self.main_treeview.pack(fill='both', expand=1)
+
+        scrollbar['command'] = self.main_treeview.yview
+
+        button = Button(self.treeview_frame, text='Adicionar Missão', command=self.add_to_selected)
+        button.pack(fill='both')
+
+        treeview.heading('#0', anchor='n', text='')
+        treeview.heading('Name', anchor='n', text='Missão')
+        treeview.heading('Points', anchor='n', text='Pontos')
+        treeview.heading('Requirements', anchor='n', text='Meta')
+
+        treeview.column('#0', minwidth=40, width=40, stretch=0, anchor='n')
+        treeview.column('Name', minwidth=700, width=700, stretch=0, anchor='n')
+        treeview.column('Points', minwidth=60, width=60, stretch=0, anchor='n')
+        treeview.column('Requirements', minwidth=80, width=80, stretch=0, anchor='n')
+
+    def populate_selected_frame(self):
+        # label = tk.Label(self.selected_quests_frame, textvariable=self.sel_label_var)
+        # label.pack(fill='both')
+
+        button = Button(self.selected_quests_frame, text='Remover Missão', command=self.remove_from_selected)
+        button.pack(fill='both')
+
+        treeview = self.sel_treeview = TreeView(self.selected_quests_frame)
+        treeview.configure(columns=('Name', 'Points'))
+        treeview.pack(fill='both', expand=1)
+
+        treeview.heading('#0', anchor='n', text='')
+        treeview.heading('Name', anchor='n', text='Missão')
+        treeview.heading('Points', anchor='n', text='Pontos')
+
+        treeview.column('#0', minwidth=40, width=40, stretch=0, anchor='n')
+        treeview.column('Name', minwidth=35, width=350, stretch=0, anchor='n')
+        treeview.column('Points', minwidth=58, width=58, stretch=0, anchor='n')
+
+    def populate_buttons_frame(self):
+        buttons = [['Começar', 'call_start'], ['Configurações', 'call_config'], ['Histórico', 'call_history']]
+        for text, command in buttons:
+            button = Button(self.buttons_frame, text=text, command=getattr(self, command, None))
+            button.pack(fill='both', expand=1)
+
+    def populate_details_frame1(self):
+        name_label = Label(self.details_frame1, compound='top')#, textvariable=self.name_var1)
+        name_label.pack()
+
+        points_label = Label(self.details_frame1)#, textvariable=self.points_var1)
+        points_label.pack()
+
+        req_label = Label(self.details_frame1)#, textvariable=self.req_var1)
+        req_label.pack()
+
+        time_label = Label(self.details_frame1)#, textvariable=self.time_var1)
+        time_label.pack()
+
+    def populate_details_frame2(self):
+        pass
 
     def add_to_selected(self):
-        items = self.get_selected_items()
-        for text, q_id in items:
-            if q_id in self.selected_quests_ids:
-                continue
-            else:
-                self.selected_quests_ids.append(q_id)
-                self.selected_lb.insert('end', text)
-        print(self.selected_quests_ids)
+        selected = self.get_selected_from_main()
 
-    def remove_item(self):
-        try:
-            index = self.selected_lb.curselection()
-            for i in list(index)[::-1]:
+        for quest in selected:
+            iid = quest['Id']
+            name = quest['Name']
+            points = quest['Points']
+            self.sel_treeview.insert('', 'end', iid=iid, values=(name, points))
 
-                print('Removeu [Id: ' + str(self.selected_quests_ids[i]), self.selected_lb.get(i) + ']')
-                self.selected_lb.delete(i)
-                self.selected_quests_ids.pop(i)
-        except IndexError:
-            return
+    def remove_from_selected(self):
+        selected = self.sel_treeview.selection()
+        self.sel_treeview.delete(*selected)
 
-    def _start(self):
-        db.update_selected(self.selected_quests_ids)
-        from LMGF4 import main
-        self.root.after_cancel(self.up1)
-        self.root.after_cancel(self.up2)
-        self.root.destroy()
-        main()
+    def tab_button_command(self, tab, button):
+        unbind_invert(button)
+        if self.last_button:
+            self.last_button.configure(bg='#262626', fg='#ffffff',)
+            invert_on_hover(self.last_button)
+        button.configure(bg='red', fg='cyan')
+        self.last_button = button
 
-    def config_launcher(self):
-        thread = threading.Thread(target=self.config_gui)
-        thread.start()
+        self.populate_main_treeview(tab)
 
-    def config_gui(self):
-        self.pointers_button.config(state='disabled')
-        ConfigGUI()
-        self.pointers_button.config(state='normal')
+    def populate_main_treeview(self, category):
+        self.main_treeview.delete(*self.main_treeview.get_children())
+        quests = db.get_quests_by_category(category)
+        for quest_id, name, points, req, *_, img in quests:
+            self.main_treeview.insert('', 'end', iid=quest_id, values=(name, points, req))
 
-    def history_launcher(self):
-        thread = threading.Thread(target=self.history_gui, daemon=True)
-        thread.start()
+    def get_selected_from_main(self):
+        tv = self.main_treeview
+        selected = []
+        for i in tv.selection():
+            d = tv.set(i)
+            d.update({'Id': i})
+            selected.append(d)
+        return selected
 
-    def history_gui(self):
-        self.history_button.config(state='disabled')
-        HistoryGUI()
-        self.history_button.config(state='normal')
+    def change_listener(self):
+        q_id = self.main_treeview.selection()
+        q_id = q_id[-1] if q_id else ''
+
+        if q_id != self.focused_item:
+            self.refresh_details1(q_id)
+        self.focused_item = q_id
+
+        self.after(100, self.change_listener)
+
+    def refresh_details1(self, _id):
+        name_label, points_label, req_label, time_label = self.details_frame1.children.values()
+
+        if not _id:
+            name_label.configure(image=None, text='')
+            points_label.configure(image=None, text='')
+            req_label.configure(image=None, text='')
+            time_label.configure(image=None, text='')
+        else:
+            _, name, points, req, time, *_, quest_img, quest_icon = db.get_quest_by_id(_id)
+
+            name_img = ImageTk.PhotoImage(load_quest_image(quest_img))
+
+
+
+            name_label.configure(image=name_img, text=name)
+            points_label.configure(image=None, text=points)
+            req_label.configure(image=None, text=req)
+            time_label.configure(image=None, text=time)
+        # self.name_var1.set(name)
+        # self.points_var1.set(points)
+        # self.req_var1.set(req)
+        # self.time_var1.set(time)
+
+
+
+
+
 
 
 class ConfigGUI:
@@ -539,7 +640,7 @@ class HistoryGUI:
                                    font='-family {Gadugi} -size 20 -weight bold', justify='center')
         self.time_label.grid(columnspan=3, column=0, row=2, sticky='nsew')
 
-        self.img = tk.PhotoImage(master=detail_frame, file='Imgs\\00.png')
+        self.img = tk.PhotoImage(master=detail_frame, file='imgs\\00.png')
         self.img_label = tk.Label(detail_frame, image=self.img, pady=200, relief='groove',
                                   borderwidth=0)
         self.img_label.grid(columnspan=3, row=3, pady=10)
@@ -585,9 +686,9 @@ class HistoryGUI:
             except ValueError:
                 date, hour, acc, name, points, req, time, image, grabbed = '', '', '', '', '', '', '', 0, None
             if image:
-                self.img.configure(file=f'Imgs\\{image:03d}.png')
+                self.img.configure(file=f'imgs\\{image:03d}.png')
             else:
-                self.img.configure(file=f'Imgs\\{0:03d}.png')
+                self.img.configure(file=f'imgs\\{0:03d}.png')
 
             if grabbed == '1':
                 self.account_label.config(fg='#65E984')
@@ -648,4 +749,4 @@ class HistoryGUI:
 
 
 if __name__ == '__main__':
-    gui = MainGUI()
+    gui = MainGUI().mainloop()
