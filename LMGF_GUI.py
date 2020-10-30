@@ -232,7 +232,10 @@ def load_quest_image(img_index):
 
 
 def load_icon_image(img_index):
+    img_index = 35 if not img_index else img_index
     path = f'imgs\\icons\\{int(img_index):03d}.png'
+    img = Image.open(path)
+    return img
 
 
 class Button(tk.Button):
@@ -370,13 +373,13 @@ class MainGUI(tk.Tk):
         name_label = Label(self.details_frame1, compound='top')#, textvariable=self.name_var1)
         name_label.pack()
 
-        points_label = Label(self.details_frame1)#, textvariable=self.points_var1)
+        points_label = Label(self.details_frame1, compound='left')#, textvariable=self.points_var1)
         points_label.pack()
 
-        req_label = Label(self.details_frame1)#, textvariable=self.req_var1)
+        req_label = Label(self.details_frame1, compound='left')#, textvariable=self.req_var1)
         req_label.pack()
 
-        time_label = Label(self.details_frame1)#, textvariable=self.time_var1)
+        time_label = Label(self.details_frame1, compound='left')#, textvariable=self.time_var1)
         time_label.pack()
 
     def populate_details_frame2(self):
@@ -449,21 +452,22 @@ class MainGUI(tk.Tk):
             _, name, points, req, time, *_, quest_img, quest_icon = db.get_quest_by_id(_id)
 
             name_img = ImageTk.PhotoImage(load_quest_image(quest_img))
-            points_img = ImageTk.PhotoImage(load_quest_image())
-            req_img = ImageTk.PhotoImage(load_quest_image(quest_icon))
-            time_img = ImageTk.PhotoImage(load_quest_image())
+            points_img = ImageTk.PhotoImage(load_icon_image(66))
+            req_img = ImageTk.PhotoImage(load_icon_image(quest_icon))
+            time_img = ImageTk.PhotoImage(load_icon_image(11))
 
             name_label.configure(image=name_img, text=name)
             name_label.image = name_img
 
-            points_label.configure(image=None, text=points)
-            points_label.image = None
+            points_label.configure(image=points_img, text=points)
+            points_label.image = points_img
 
-            req_label.configure(image=None, text=req)
-            req_label.image = None
+            req_label.configure(image=req_img, text=req)
+            req_label.image = req_img
 
-            time_label.configure(image=None, text=time)
-            time_label.image = None
+            time_label.configure(image=time_img, text=time)
+            time_label.image = time_img
+
         # self.name_var1.set(name)
         # self.points_var1.set(points)
         # self.req_var1.set(req)
