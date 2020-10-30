@@ -73,7 +73,7 @@ def get_img_color_avg(img):
     sum_g //= count
     sum_b //= count
 
-    return f'#{hex(sum_r*255*255 + sum_g*255 + sum_b)[2:]:0<6}'
+    return f'#{hex(sum_r*255*255 + sum_g*255 + sum_b)[2:]:0>6}'
 
 
 def get_most_common_color(img, border_width=1):
@@ -91,10 +91,13 @@ def get_most_common_color(img, border_width=1):
             except KeyError:
                 colors.update({c: 1})
 
-    for c in sorted(colors.items(), key=lambda i: i[1], reverse=True):
+    #print(sorted(colors.items(), key=lambda i: i[1], reverse=True))
+
+    for c in sorted(colors.items(), key=lambda i: i[1]):
         color = c[0]
 
-    return f'#{hex(color)[2:]:0<6}'
+
+    return f'#{hex(color)[2:]:0>6}'
 
 
 class Button(tk.Button):
@@ -345,11 +348,13 @@ class MainGUI(tk.Tk):
             img = load_quest_image(quest_img)
             bg = get_most_common_color(img)
             r, g, b = [int(x, 16) for x in (bg[1:3], bg[3:5], bg[5:])]
-            while (r+g+b)//3 > 40:
-                r *= .95
-                g *= .95
-                b *= .95
-                bg = f'#{hex((int(r)*256*256 + int(g)*256 + int(b)))[2:]}'
+
+            while (r+g+b)//3 > 50:
+                r *= .9
+                g *= .9
+                b *= .9
+                bg = f'#{hex((int(r)*256*256 + int(g)*256 + int(b)))[2:]:0>6}'
+            print(bg)
 
             name_img = ImageTk.PhotoImage(img, 2)
             points_img = ImageTk.PhotoImage(load_icon_image(66, height=40))
