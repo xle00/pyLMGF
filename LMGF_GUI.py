@@ -118,10 +118,52 @@ class Button(tk.Button):
 class TreeView(ttk.Treeview):
     def __init__(self, parent, **kw):
         super(TreeView, self).__init__(parent, **kw)
+        self.loaded_imgs = {}
         self.configure(
-            selectmode='extended'
+            selectmode='extended',
+            style='treeview.Treeview'
         )
-        print(self.keys())
+        # print(self.keys())
+
+
+class TreeViewStyle(ttk.Style):
+    def __init__(self, parent):
+        super(TreeViewStyle, self).__init__(parent)
+        self.treeview_style()
+
+    def treeview_style(self):
+        # heading layout
+        self.element_create("Custom.Treeheading.border", "from", "default")
+        self.layout("treeview.Treeview.Heading",
+                    [("Custom.Treeheading.cell", {'sticky': 'nsew'}),
+                     ("Custom.Treeheading.border", {'sticky': 'nswe', 'children':
+                         [("Custom.Treeheading.padding", {'sticky': 'nswe', 'children':
+                             [("Custom.Treeheading.image", {'side': 'right','sticky': ''}),
+                              ("Custom.Treeheading.text", {'sticky': 'we'})]})]}),])
+
+        # style
+        self.configure("treeview.Treeview",
+                       highlightthickness=0,
+                       bd=0,
+                       font=('Gadugi', 12),
+                       rowheight=35,
+                       )
+
+        # heading style
+        self.configure("treeview.Treeview.Heading",
+                       font=('Calibri', 18, 'bold'),
+                       background='black',
+                       foreground='white'
+                       )
+
+        # heading map
+        self.map("treeview.Treeview.Heading",
+                 relief=[('active', 'groove'), ('pressed', 'sunken')],
+                 background=[('active', 'white')],
+                 foreground=[('active', 'black')])
+
+        # self.layout("treeview.Treeview", [
+        #    ('treeview.Treeview.treearea', {'sticky': 'news'})])
 
 
 class Label(tk.Label):
@@ -140,6 +182,8 @@ class MainGUI(tk.Tk):
         super(MainGUI, self).__init__()
         self.geometry('1210x670')
 
+        style = TreeViewStyle(self)
+
         self.last_button = None
 
         self.main_treeview = TreeView(None)
@@ -147,11 +191,6 @@ class MainGUI(tk.Tk):
 
         self.sel_treeview = TreeView(None)
         self.focused_sel = None
-
-        self.name_var1 = tk.StringVar()
-        self.points_var1 = tk.StringVar()
-        self.req_var1 = tk.StringVar()
-        self.time_var1 = tk.StringVar()
 
         self.tabs_frame = tk.Frame(bg='red')
         self.tabs_frame.place(x=0, y=0, relwidth=1, height=26)
@@ -186,7 +225,8 @@ class MainGUI(tk.Tk):
             button.pack(side='left', fill='both', expand=1)
 
     def populate_treeview_frame(self):
-        scrollbar = tk.Scrollbar(self.treeview_frame, orient='vertical')
+        # scrollbar = tk.Scrollbar(self.treeview_frame, orient='vertical')
+        scrollbar = ttk.Scrollbar(self.treeview_frame, orient='vertical')
         scrollbar.pack(side='right', fill='y')
 
         treeview = self.main_treeview = TreeView(self.treeview_frame, displaycolumns='#all', yscrollcommand=scrollbar.set)
@@ -198,7 +238,7 @@ class MainGUI(tk.Tk):
         scrollbar['command'] = self.main_treeview.yview
 
         button = Button(self.treeview_frame, text='Adicionar Missão', command=self.add_to_selected, fg=ADD_GREEN)
-        button.pack(fill='both')
+        button.pack(fill='both', expand=1)
 
         treeview.heading('#0', anchor='n', text='')
         treeview.heading('Name', anchor='n', text='Missão')
@@ -295,8 +335,19 @@ class MainGUI(tk.Tk):
     def populate_main_treeview(self, category):
         self.main_treeview.delete(*self.main_treeview.get_children())
         quests = db.get_quests_by_category(category)
-        for quest_id, name, points, req, *_, img in quests:
-            self.main_treeview.insert('', 'end', iid=quest_id, values=(name, points, req))
+
+        img_height = 34
+        for quest_id, name, points, req, *_, q_img, _ in quests:
+            img_hash = f'{q_img}_{img_height}'
+
+            if img_hash in self.main_treeview.loaded_imgs.keys():
+                img = self.main_treeview.loaded_imgs.get(img_hash)
+            else:
+                img = load_quest_image(q_img, img_height)
+                img = ImageTk.PhotoImage(img)
+                self.main_treeview.loaded_imgs.update({img_hash: img})
+
+            self.main_treeview.insert('', 'end', iid=quest_id, values=(name, points, req), image=img, text='')
 
     def get_selected_from_main(self):
         tv = self.main_treeview
@@ -354,7 +405,6 @@ class MainGUI(tk.Tk):
                 g *= .9
                 b *= .9
                 bg = f'#{hex((int(r)*256*256 + int(g)*256 + int(b)))[2:]:0>6}'
-            print(bg)
 
             name_img = ImageTk.PhotoImage(img, 2)
             points_img = ImageTk.PhotoImage(load_icon_image(66, height=40))
@@ -393,26 +443,32 @@ class MainGUI(tk.Tk):
         else:
             _, name, points, req, time, *_, quest_img, quest_icon = db.get_quest_by_id(_id)
 
-            name_img = ImageTk.PhotoImage(load_quest_image(quest_img))
+            img = load_quest_image(quest_img)
+            bg = get_most_common_color(img)
+            r, g, b = [int(x, 16) for x in (bg[1:3], bg[3:5], bg[5:])]
+
+            while (r + g + b) // 3 > 50:
+                r *= .9
+                g *= .9
+                b *= .9
+                bg = f'#{hex((int(r) * 256 * 256 + int(g) * 256 + int(b)))[2:]:0>6}'
+
+            name_img = ImageTk.PhotoImage(img)
             points_img = ImageTk.PhotoImage(load_icon_image(66, height=40))
             req_img = ImageTk.PhotoImage(load_icon_image(quest_icon, height=40))
             time_img = ImageTk.PhotoImage(load_icon_image(11, height=40))
 
-            name_label.configure(image=name_img, text=name)
+            name_label.configure(image=name_img, text=name, bg=bg)
             name_label.image = name_img
 
-            points_label.configure(image=points_img, text=f'+{points}')
+            points_label.configure(image=points_img, text=f'+{points}', bg=bg)
             points_label.image = points_img
 
-            req_label.configure(image=req_img, text=f'0 / {req}')
+            req_label.configure(image=req_img, text=f'0 / {req}', bg=bg)
             req_label.image = req_img
 
-            time_label.configure(image=time_img, text=time)
+            time_label.configure(image=time_img, text=time, bg=bg)
             time_label.image = time_img
-
-
-
-
 
 
 class ConfigGUI:
