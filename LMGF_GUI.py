@@ -241,7 +241,7 @@ class Label(tk.Label):
 class MainGUI(tk.Tk):
     def __init__(self):
         super(MainGUI, self).__init__()
-        self.geometry('1210x670')
+        #self.geometry('1210x670')
 
         CustomStyle(self)
 
@@ -255,22 +255,22 @@ class MainGUI(tk.Tk):
         self.focused_sel = None
 
         self.tabs_frame = tk.Frame(bg='red')
-        self.tabs_frame.place(x=0, y=0, relwidth=1, height=26)
+        self.tabs_frame.place(relx=0, rely=0, relwidth=1, relheight=0.03880597015)
 
         self.treeview_frame = tk.Frame(bg='yellow')
-        self.treeview_frame.place(x=0, y=26, width=900, height=410)
+        self.treeview_frame.place(relx=0, rely=0.03880597015, relwidth=0.7438016529, relheight=0.6119402985)
 
         self.selected_quests_frame = tk.Frame(bg='blue')
-        self.selected_quests_frame.place(x=0, y=410+26, width=450, height=670-410-26,)
-
-        self.buttons_frame = tk.Frame(bg='orange')
-        self.buttons_frame.place(x=900, y=410+26, width=1210-900, height=670-410-26)
-
-        self.details_frame1 = tk.Frame(bg='cyan')
-        self.details_frame1.place(x=900, y=26, width=1210-900, height=410)
+        self.selected_quests_frame.place(relx=0, rely=0.6507462687, relwidth=0.3719008264, relheight=0.3492537313)
 
         self.details_frame2 = tk.Frame(bg='purple')
-        self.details_frame2.place(x=450, y=410+26, width=450, height=670-410-26)
+        self.details_frame2.place(relx=0.3719008264, rely=0.6507462687, relwidth=0.3719008264, relheight=0.3492537313)
+
+        self.buttons_frame = tk.Frame(bg='orange')
+        self.buttons_frame.place(relx=0.7438016529, rely=0.6507462687, relwidth=0.2561983471, relheight=0.3492537313)
+
+        self.details_frame1 = tk.Frame(bg='cyan')
+        self.details_frame1.place(relx=0.7438016529, rely=0.03880597015, relwidth=0.2561983471, relheight=0.6119402985)
 
         self.populate_tab_frame()
         self.populate_treeview_frame()
