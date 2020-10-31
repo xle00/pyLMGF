@@ -11,7 +11,7 @@ pointers = Pointers()
 
 
 FONT = '-family Gadugi -weight bold '
-YELLOW = ''
+YELLOW = '#f7e083'
 MAIN_FG = '#efeee9'
 REMOVE_RED = '#e26161'
 ADD_GREEN = '#61e261'
@@ -29,6 +29,14 @@ def invert_on_hover(widget: tk.Widget):
 def unbind_invert(widget: tk.Widget):
     widget.bind('<Enter>', lambda e: None)
     widget.bind('<Leave>', lambda e: None)
+
+
+def bind_hover(widget: tk.Widget, **kw):
+    fg = widget.cget('fg')
+    bg = widget.cget('bg')
+
+    widget.bind('<Enter>', lambda e: widget.configure(**kw))
+    widget.bind('<Leave>', lambda e: widget.configure(fg=fg, bg=bg))
 
 
 def load_quest_image(img_index, height=None, width=None):
@@ -112,7 +120,7 @@ class Button(tk.Button):
             cursor='hand2',
         )
         self.config(**kw)
-        invert_on_hover(self)
+        bind_hover(self, bg='#565656')
 
 
 class TreeView(ttk.Treeview):
@@ -125,9 +133,9 @@ class TreeView(ttk.Treeview):
         # print(self.keys())
 
 
-class TreeViewStyle(ttk.Style):
+class CustomStyle(ttk.Style):
     def __init__(self, parent):
-        super(TreeViewStyle, self).__init__(parent)
+        super(CustomStyle, self).__init__(parent)
         self.main_treeview_style()
         self.sec_treeview_style()
 
@@ -153,6 +161,7 @@ class TreeViewStyle(ttk.Style):
                  relief=[('active', 'groove'), ('pressed', 'sunken')],
                  background=[('active', 'white')],
                  foreground=[('active', 'black')])
+        # print(self.map('treeview.Treeview.Heading'))
 
         # style
         self.configure("treeview.Treeview",
@@ -160,11 +169,18 @@ class TreeViewStyle(ttk.Style):
                        bd=0,
                        font=('Gadugi', 14),
                        rowheight=45,
+                       background='#262626'
                        )
 
         # layout
         self.layout("treeview.Treeview", [
-            ('treeview.Treeview.treearea', {'sticky': 'news'})])
+             ('treeview.Treeview.treearea', {'sticky': 'news'})])
+
+        #map
+        self.map('treeview.Treeview',
+                 background=[('disabled', '#262626'), ('selected', MAIN_FG)],
+                 foreground=[('disabled', MAIN_FG), ('selected', '#262626')],
+                 )
 
     def sec_treeview_style(self):
         # heading layout
@@ -194,11 +210,21 @@ class TreeViewStyle(ttk.Style):
                        highlightthickness=0,
                        bd=0,
                        font=('Gadugi', 11),
+                       background='#292929',
+                       rowheight=25
                        )
 
         # layout
         self.layout("sectreeview.Treeview", [
             ('sectreeview.Treeview.treearea', {'sticky': 'news'})])
+
+        print(self.map('Treeview'))
+
+        # map
+        self.map('sectreeview.Treeview',
+                 background=[('disabled', '#262626'), ('selected', MAIN_FG)],
+                 foreground=[('disabled', MAIN_FG), ('selected', '#262626')],
+                 )
 
 
 class Label(tk.Label):
@@ -206,8 +232,8 @@ class Label(tk.Label):
         super(Label, self).__init__(parent)
         self.configure(
             bg='pink',
-            fg='white',
-            font=FONT,
+            fg=MAIN_FG,
+            font=FONT+' -size 16',
         )
         self.config(**kw)
 
@@ -217,7 +243,7 @@ class MainGUI(tk.Tk):
         super(MainGUI, self).__init__()
         self.geometry('1210x670')
 
-        TreeViewStyle(self)
+        CustomStyle(self)
 
         self.last_button = None
 
@@ -254,10 +280,16 @@ class MainGUI(tk.Tk):
         self.populate_details_frame2()
         self.change_listener()
 
-        self.bind('<Return>', lambda e:  self.add_to_selected())
-        self.bind('<space>', lambda e: self.add_to_selected())
+        self.main_treeview.bind('<Return>', lambda e:  self.add_to_selected())
+        self.main_treeview.bind('<space>', lambda e: self.add_to_selected())
         self.main_treeview.bind('<Double-Button-1>', lambda e: self.add_to_selected())
-        self.bind('<Delete>', lambda e: self.remove_from_selected())
+        self.main_treeview.bind('<B1-Motion>', lambda e, t=self.main_treeview: self.dragging(e, t))
+        self.sel_treeview.bind('<Double-Button-3>', lambda e: 1)
+
+        self.sel_treeview.bind('<B1-Motion>', lambda e, t=self.sel_treeview: self.dragging(e, t))
+        self.sel_treeview.bind('<Delete>', lambda e: self.remove_from_selected())
+
+        # self.main_treeview.bind('<B2-Motion>', lambda e: print(self.main_treeview.identify_region(e.x, e.y)))
 
     def populate_tab_frame(self):
         for tab in db.get_categories():
@@ -266,21 +298,24 @@ class MainGUI(tk.Tk):
             button.pack(side='left', fill='both', expand=1)
 
     def populate_treeview_frame(self):
-        frame = tk.Frame(self.treeview_frame)
+        frame = tk.Frame(self.treeview_frame, bg='#262626')
         frame.pack(fill='both', expand=1)
 
-        self.main_scrollbar = scrollbar = ttk.Scrollbar(frame, orient='vertical')
+        self.main_scrollbar = scrollbar = tk.Scrollbar(frame, orient='vertical',)
+
+        # ttk.Scrollbar(frame, orient='vertical', style='TScrollbar')
         # scrollbar.pack(side='right', fill='y')
 
-        treeview = self.main_treeview = TreeView(frame, displaycolumns='#all', height=10, show='tree',
+        treeview = self.main_treeview = TreeView(frame, displaycolumns='#all', height=8, show='tree',
                                                  yscrollcommand=scrollbar.set, style='treeview.Treeview')
         treeview['columns'] = ('Name', 'Points')
         treeview.pack(side='left', fill='both', expand=1)
 
         scrollbar['command'] = self.main_treeview.yview
 
-        # button = Button(self.treeview_frame, text='Adicionar Missão', command=self.add_to_selected, fg=ADD_GREEN)
-        # button.pack(fill='both', expand=1)
+        button = Button(self.treeview_frame, text='Adicionar Missão', command=self.add_to_selected, fg=ADD_GREEN,
+                        height=10)
+        button.pack(fill='both')
 
         treeview.heading('#0', anchor='w', text='')
         treeview.heading('Name', anchor='w', text='Missão')
@@ -295,7 +330,7 @@ class MainGUI(tk.Tk):
         # label.pack(fill='both')
 
         treeview = self.sel_treeview = TreeView(self.selected_quests_frame, style='sectreeview.Treeview',
-                                                height=6, show='tree')
+                                                height=6, show='tree', padding=(0,5,0))
         treeview.configure(columns=('Name', 'Points'))
         treeview.pack(fill='both', expand=1)
 
@@ -306,11 +341,17 @@ class MainGUI(tk.Tk):
         treeview.column('#0', minwidth=0, width=0, stretch=0, anchor='n')
         treeview.column('Name', minwidth=380, width=380, stretch=0, anchor='n')
         treeview.column('Points', minwidth=70, width=70, stretch=0, anchor='n')
-        print(treeview.keys())
+        # print(treeview.keys())
 
         button = Button(self.selected_quests_frame, text='Remover Missão', command=self.remove_from_selected,
                         fg=REMOVE_RED)
         button.pack(fill='both')
+
+        treeview.tag_configure('normal', background='#262626', foreground='white')
+
+        for qid in db.get_selected_ids():
+            _, name, points, *_ = db.get_quest_by_id(qid)
+            treeview.insert('', 'end', qid, values=(name, f'+{points}'), tags=('normal',))
 
     def populate_buttons_frame(self):
         buttons = [['Começar', 'call_start'], ['Configurações', 'call_config'], ['Histórico', 'call_history']]
@@ -320,7 +361,7 @@ class MainGUI(tk.Tk):
             button.pack(fill='both', expand=1)
 
     def populate_details_frame1(self):
-        name_label = Label(self.details_frame1, compound='top', wraplength=200)
+        name_label = Label(self.details_frame1, compound='top', wraplength=300, fg=YELLOW)
         name_label.pack(fill='both', expand=1)
 
         points_label = Label(self.details_frame1, compound='left')
@@ -333,19 +374,19 @@ class MainGUI(tk.Tk):
         time_label.pack(fill='both', expand=1)
 
     def populate_details_frame2(self):
-        name_label = Label(self.details_frame2, compound='left', wraplength=200)  # , textvariable=self.name_var1)
+        name_label = Label(self.details_frame2, compound='left', wraplength=300, fg=YELLOW)
         name_label.pack(fill='both', expand=1)
 
         frame = tk.Frame(self.details_frame2)
         frame.pack(fill='both', expand=1)
 
-        points_label = Label(frame, compound='top')  # , textvariable=self.points_var1)
+        points_label = Label(frame, compound='top')
         points_label.pack(fill='both', expand=1, side='left')
 
-        req_label = Label(frame, compound='top')  # , textvariable=self.req_var1)
+        req_label = Label(frame, compound='top')
         req_label.pack(fill='both', expand=1, side='left')
 
-        time_label = Label(frame, compound='top')  # , textvariable=self.time_var1)
+        time_label = Label(frame, compound='top')
         time_label.pack(fill='both', expand=1, side='left')
 
     def populate_main_treeview(self, category):
@@ -374,29 +415,53 @@ class MainGUI(tk.Tk):
 
             self.main_treeview.insert('', 'end', iid=quest_id, values=(name, f'+{points}'), image=img, tags=tags)
             self.main_treeview.tag_configure('normal', background='#262626', foreground='#d0d0d0', )
+            self.main_treeview.tag_configure('selected', background='#d1ae62', foreground='#262626', )
 
     def add_to_selected(self):
         selected = self.get_selected_from_main()
+        if not selected:
+            return
+        db.set_selected([d['Id'] for d in selected])
 
         for quest in selected:
             iid = quest['Id']
             name = quest['Name']
             points = quest['Points']
             if iid not in self.sel_treeview.get_children():
-                self.sel_treeview.insert('', 'end', iid=iid, values=(name, points))
+                self.sel_treeview.insert('', 'end', iid=iid, values=(name, points), tags=('normal',))
 
-    def remove_from_selected(self):
-        selected = self.sel_treeview.selection()
-        self.sel_treeview.delete(*selected)
+        # refresh main treeview to update selected colors
+        q_id = self.main_treeview.selection()
+        self.populate_main_treeview(self.last_button.cget('text'))
+        self.main_treeview.selection_set(*q_id)
+        self.main_treeview.focus(q_id[-1])
+
+    def remove_from_selected(self, qid=None):
+        if qid:
+            selected = ''
+        else:
+            selected = self.sel_treeview.selection()
+            if not selected:
+                return
+
+            # delete from rows from treeview and set quests unselected
+            self.sel_treeview.delete(*selected)
+            db.set_unselected(selected)
+
+            # refresh main treeview to update selected colors
+            q_id = self.main_treeview.selection()
+            self.populate_main_treeview(self.last_button.cget('text'))
+            self.main_treeview.selection_set(*q_id)
+            self.main_treeview.focus(q_id[-1])
 
     def tab_button_command(self, tab, button):
         unbind_invert(button)
         if self.last_button:
             if button is self.last_button:
                 return
-            self.last_button.configure(bg='#262626', fg='#ffffff', font=FONT + '-size 9 -weight normal')
-            invert_on_hover(self.last_button)
-        button.configure(bg='#e9f4f3', fg='black', font='-weight bold')
+            self.last_button.configure(bg='#262626', fg=MAIN_FG, font=FONT + '-size 9 -weight normal')
+            bind_hover(self.last_button, bg='#565656')
+        button.configure(bg=MAIN_FG, fg='#262626', font='-weight bold')
         self.last_button = button
 
         self.populate_main_treeview(tab)
@@ -441,16 +506,16 @@ class MainGUI(tk.Tk):
             return
 
         if not _id:
-            name_label.configure(image=None, text='', bg='#262626')
+            name_label.configure(image=None, text='', bg='#232323')
             name_label.image = None
 
-            points_label.configure(image=None, text='', bg='#262626')
+            points_label.configure(image=None, text='', bg='#232323')
             points_label.image = None
 
-            req_label.configure(image=None, text='', bg='#262626')
+            req_label.configure(image=None, text='', bg='#232323')
             req_label.image = None
 
-            time_label.configure(image=None, text='', bg='#262626')
+            time_label.configure(image=None, text='', bg='#232323')
             time_label.image = None
         else:
             _, name, points, req, time, *_, quest_img, quest_icon = db.get_quest_by_id(_id)
@@ -473,17 +538,23 @@ class MainGUI(tk.Tk):
             name_label.configure(image=name_img, text=name, bg=bg)
             name_label.image = name_img
 
-            points_label.configure(image=points_img, text=f'+{points}', bg=bg)
+            points_label.configure(image=points_img, text=f' +{points}', bg=bg)
             points_label.image = points_img
 
-            req_label.configure(image=req_img, text=f'0 / {req}', bg=bg)
+            req_label.configure(image=req_img, text=f' 0 / {req}', bg=bg)
             req_label.image = req_img
 
-            time_label.configure(image=time_img, text=time, bg=bg)
+            time_label.configure(image=time_img, text=f' {time}', bg=bg)
             time_label.image = time_img
 
     def call_start(self):
         print('hi')
+
+    def dragging(self, event, treeview):
+        rowid = treeview.identify_row(event.y)
+        treeview.selection_set(rowid)
+        treeview.focus(rowid)
+
 
 class ConfigGUI:
     def __init__(self):

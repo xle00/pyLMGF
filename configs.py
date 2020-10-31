@@ -17,11 +17,16 @@ class QuestDB(sqlite3.Connection):
         quests = self.cur.execute('select * from quests where is_selected = 1').fetchall()
         return quests
 
-    def update_selected(self, quest_id_list):
+    def set_selected(self, quest_id_list):
+        print(quest_id_list)
         with self:
-            self.cur.execute('UPDATE quests SET is_selected = Null')
             for quest in quest_id_list:
                 self.cur.execute('update quests SET is_selected = 1 where quest_id = ?', [quest])
+
+    def set_unselected(self, quest_id_list):
+        with self:
+            for quest in quest_id_list:
+                self.cur.execute('update quests SET is_selected = Null where quest_id = ?', [quest])
 
     def get_quest_by_id(self, quest_id):
         quest = self.cur.execute('select * from quests where quest_id = ?', [quest_id]).fetchone()
@@ -35,6 +40,10 @@ class QuestDB(sqlite3.Connection):
     def get_quests_by_category(self, category):
         result = self.cur.execute('select * from quests where tab_name = ? order by quest_name', (category,)).fetchall()
         return result
+
+    def get_selected_ids(self):
+        result = self.cur.execute('select quest_id from quests where is_selected = 1').fetchall()
+        return [r[0] for r in result]
 
 
 class Pointers(sqlite3.Connection):
