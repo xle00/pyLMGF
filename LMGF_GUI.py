@@ -261,16 +261,16 @@ class MainGUI(tk.Tk):
         self.treeview_frame.place(x=0, y=26, width=900, height=410)
 
         self.selected_quests_frame = tk.Frame(bg='blue')
-        self.selected_quests_frame.place(x=0, y=410+26, height=670-410-26, width=450)
+        self.selected_quests_frame.place(x=0, y=410+26, width=450, height=670-410-26,)
 
         self.buttons_frame = tk.Frame(bg='orange')
-        self.buttons_frame.place(x=900, y=410+26, height=670-410-26, width=1210-900)
+        self.buttons_frame.place(x=900, y=410+26, width=1210-900, height=670-410-26)
 
         self.details_frame1 = tk.Frame(bg='cyan')
         self.details_frame1.place(x=900, y=26, width=1210-900, height=410)
 
         self.details_frame2 = tk.Frame(bg='purple')
-        self.details_frame2.place(x=450, y=410+26, height=670-410-26, width=450)
+        self.details_frame2.place(x=450, y=410+26, width=450, height=670-410-26)
 
         self.populate_tab_frame()
         self.populate_treeview_frame()
