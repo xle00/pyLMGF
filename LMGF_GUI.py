@@ -288,7 +288,7 @@ class MainGUI(tk.Tk):
 
         treeview.column('#0', minwidth=62, width=62, stretch=0, anchor='w')
         treeview.column('Name', minwidth=700, width=700, stretch=0, anchor='w')
-        treeview.column('Points', minwidth=122, width=122, stretch=0, anchor='w')
+        treeview.column('Points', minwidth=112, width=112, stretch=0, anchor='w')
 
     def populate_selected_frame(self):
         # label = tk.Label(self.selected_quests_frame, textvariable=self.sel_label_var)
@@ -348,6 +348,33 @@ class MainGUI(tk.Tk):
         time_label = Label(frame, compound='top')  # , textvariable=self.time_var1)
         time_label.pack(fill='both', expand=1, side='left')
 
+    def populate_main_treeview(self, category):
+        self.main_treeview.delete(*self.main_treeview.get_children())
+        quests = db.get_quests_by_category(category)
+
+        if len(quests) > self.main_treeview.cget('height'):
+            self.main_treeview.column('Points', minwidth=122, width=122)
+            self.main_scrollbar.pack(side='right', fill='y', expand=1)
+        else:
+            self.main_treeview.column('Points', minwidth=138, width=138)
+            self.main_scrollbar.pack_forget()
+
+        img_height = 44
+        for quest_id, name, points, *_, selected, _, q_img, _ in quests:
+            img_hash = f'{q_img}_{img_height}'
+
+            if img_hash in self.main_treeview.loaded_imgs.keys():
+                img = self.main_treeview.loaded_imgs.get(img_hash)
+            else:
+                img = load_quest_image(q_img, img_height)
+                img = ImageTk.PhotoImage(img)
+                self.main_treeview.loaded_imgs.update({img_hash: img})
+
+            tags = ('selected',) if selected else ('normal',)
+
+            self.main_treeview.insert('', 'end', iid=quest_id, values=(name, f'+{points}'), image=img, tags=tags)
+            self.main_treeview.tag_configure('normal', background='#262626', foreground='#d0d0d0', )
+
     def add_to_selected(self):
         selected = self.get_selected_from_main()
 
@@ -373,30 +400,6 @@ class MainGUI(tk.Tk):
         self.last_button = button
 
         self.populate_main_treeview(tab)
-
-    def populate_main_treeview(self, category):
-        self.main_treeview.delete(*self.main_treeview.get_children())
-        quests = db.get_quests_by_category(category)
-
-        if len(quests) > self.main_treeview.cget('height'):
-            self.main_treeview.column('Points', minwidth=122, width=122)
-            self.main_scrollbar.pack(side='right', fill='y', expand=1)
-        else:
-            self.main_treeview.column('Points', minwidth=138, width=138)
-            self.main_scrollbar.pack_forget()
-
-        img_height = 43
-        for quest_id, name, points, *_, q_img, _ in quests:
-            img_hash = f'{q_img}_{img_height}'
-
-            if img_hash in self.main_treeview.loaded_imgs.keys():
-                img = self.main_treeview.loaded_imgs.get(img_hash)
-            else:
-                img = load_quest_image(q_img, img_height)
-                img = ImageTk.PhotoImage(img)
-                self.main_treeview.loaded_imgs.update({img_hash: img})
-
-            self.main_treeview.insert('', 'end', iid=quest_id, values=(name, f'+{points}'), image=img)
 
     def get_selected_from_main(self):
         tv = self.main_treeview
