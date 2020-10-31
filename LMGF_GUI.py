@@ -347,7 +347,7 @@ class MainGUI(tk.Tk):
                         fg=REMOVE_RED)
         button.pack(fill='both')
 
-        treeview.tag_configure('normal', background='#262626', foreground='white')
+        treeview.tag_configure('normal', background='#262626', foreground='#d0d0d0')
 
         for qid in db.get_selected_ids():
             _, name, points, *_ = db.get_quest_by_id(qid)
@@ -498,10 +498,12 @@ class MainGUI(tk.Tk):
         if which == 'main':
             name_label, points_label, req_label, time_label = self.details_frame1.children.values()
             _id = self.focused_item
+            spacer = ' '
         elif which == 'sel':
             name_label, frame = self.details_frame2.children.values()
             points_label, req_label, time_label = frame.children.values()
             _id = self.focused_sel
+            spacer = ''
         else:
             return
 
@@ -538,13 +540,13 @@ class MainGUI(tk.Tk):
             name_label.configure(image=name_img, text=name, bg=bg)
             name_label.image = name_img
 
-            points_label.configure(image=points_img, text=f' +{points}', bg=bg)
+            points_label.configure(image=points_img, text=f'{spacer}+{points}', bg=bg)
             points_label.image = points_img
 
-            req_label.configure(image=req_img, text=f' 0 / {req}', bg=bg)
+            req_label.configure(image=req_img, text=f'{spacer}0 / {req}', bg=bg)
             req_label.image = req_img
 
-            time_label.configure(image=time_img, text=f' {time}', bg=bg)
+            time_label.configure(image=time_img, text=f'{spacer}{time}', bg=bg)
             time_label.image = time_img
 
     def call_start(self):
