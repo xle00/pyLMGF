@@ -58,7 +58,7 @@ class Pointers(sqlite3.Connection):
                     module TEXT,
                     base_offset TEXT,
                     offsets TEXT
-                ) '''
+                )''')
 
     def get_pointers(self, pointer_name):
         pointers = self.cur.execute('SELECT * from pointers where pointer_name = ?', [pointer_name]).fetchone()
