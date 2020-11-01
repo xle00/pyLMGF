@@ -351,7 +351,7 @@ class MainGUI(tk.Tk):
             treeview.insert('', 'end', qid, values=(name, f'+{points}'), tags=('normal',))
 
     def populate_buttons_frame(self):
-        buttons = [['Começar', 'call_start'], ['Configurações', 'call_config'],]
+        buttons = [['Começar', 'call_start'], ['Ponteiros', 'call_pointers'],]
         for text, command in buttons:
             button = Button(self.buttons_frame, text=text, command=getattr(self, command, None),
                             font=FONT + '-size 18')
@@ -674,9 +674,12 @@ class MainGUI(tk.Tk):
             self.refresh_details('sel', 1)
 
     def call_start(self):
-        print('hi')
+        from LMGF4 import main
+        self.destroy()
+        main()
 
-    def call_config(self):
+
+    def call_pointers(self):
         import pointers
         pointers.ConfigGUI(self)
 
