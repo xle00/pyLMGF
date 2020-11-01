@@ -680,8 +680,8 @@ class MainGUI(tk.Tk):
 
 
     def call_pointers(self):
-        import pointers
-        pointers.ConfigGUI(self)
+        import pointers_GUI
+        pointers_GUI.ConfigGUI(self)
 
 
 if __name__ == '__main__':
