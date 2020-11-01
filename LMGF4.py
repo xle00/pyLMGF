@@ -7,7 +7,7 @@ from mss import mss
 from PIL import ImageGrab
 from configs import QuestDB, Pointers
 from pushbullet import PushBullet
-from readprocessmemory import ProcessMemory, ProcessWindow
+from Process import ProcessMemory, ProcessWindow
 from Mouse import Mouse
 
 db = QuestDB()

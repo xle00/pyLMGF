@@ -12,7 +12,7 @@ else:
 class ConfigGUI(top):
     def __init__(self, parent=None):
         super(ConfigGUI, self).__init__(parent)
-        from readprocessmemory import ProcessMemory
+        from Process import ProcessMemory
         self.pointers = pointers.get_pointers()
         self.lmp = ProcessMemory('Lords Mobile.exe')
         self.vars = {}
