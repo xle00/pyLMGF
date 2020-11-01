@@ -44,6 +44,9 @@ class QuestDB(sqlite3.Connection):
         result = self.cur.execute('select quest_id from quests where is_selected = 1').fetchall()
         return [r[0] for r in result]
 
+    def get_quest_name_by_id(self, qid):
+        pass
+
 
 class Pointers(sqlite3.Connection):
     def __init__(self):
@@ -68,6 +71,13 @@ class Pointers(sqlite3.Connection):
             offsets = [int(offset, 16) for offset in offsets.split()]
             formatted.append([name, module, int(base, 16), *offsets])
         return formatted
+
+    def get_pointer_by_name(self, name):
+        result = self.cur.execute('SELECT * FROM pointers WHERE name = ?', (name,)).fetchone()
+        module = result[1]
+        base_offset = int(result[2], 16)
+        offsets = [int(i, 16) for i in result[3].split()]
+        return module, base_offset, offsets
 
     def save_pointers(self, name, values):
         with self:

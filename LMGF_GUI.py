@@ -351,7 +351,7 @@ class MainGUI(tk.Tk):
             treeview.insert('', 'end', qid, values=(name, f'+{points}'), tags=('normal',))
 
     def populate_buttons_frame(self):
-        buttons = [['Começar', 'call_start'], ['Ponteiros', 'call_pointers'],]
+        buttons = [['Ponteiros', 'call_pointers'], ['Começar', 'call_start'],]
         for text, command in buttons:
             button = Button(self.buttons_frame, text=text, command=getattr(self, command, None),
                             font=FONT + '-size 18')

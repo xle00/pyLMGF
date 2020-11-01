@@ -79,7 +79,7 @@ class LMReadMemory:
         self.name = self.get_username
 
     def get_active_time(self):
-        module, base_pointer, pointers_ = pointers.get_pointers('active_time')
+        module, base_pointer, pointers_ = pointers.get_pointer_by_name('active_time')
         dll_base_address = self.lm.get_module_address_by_name(module)
         address = self.get_pointer(dll_base_address + base_pointer, pointers_)
         value = self.read_str(address, 5)
@@ -87,7 +87,7 @@ class LMReadMemory:
         return time
 
     def get_clock(self):
-        module, base_pointer, pointers_ = pointers.get_pointers('clock')
+        module, base_pointer, pointers_ = pointers.get_pointer_by_name('clock')
         dll_base_address = self.lm.get_module_address_by_name(module)
         address = self.get_pointer(dll_base_address + base_pointer, pointers_)
         value = self.lm.read_4_bytes(address)
@@ -95,15 +95,15 @@ class LMReadMemory:
         return value
 
     def get_mission_details(self):
-        module, base_pointer, pointers_ = pointers.get_pointers('quest_points')
+        module, base_pointer, pointers_ = pointers.get_pointer_by_name('quest_points')
         dll_base_address = self.lm.get_module_address_by_name(module)
         quest_points_address = self.get_pointer(dll_base_address + base_pointer, pointers_)
 
-        module, base_pointer, pointers_ = pointers.get_pointers('quest_requirements')
+        module, base_pointer, pointers_ = pointers.get_pointer_by_name('quest_requirements')
         dll_base_address = self.lm.get_module_address_by_name(module)
         quest_reqs_address = self.get_pointer(dll_base_address + base_pointer, pointers_)
 
-        module, base_pointer, pointers_ = pointers.get_pointers('quest_time')
+        module, base_pointer, pointers_ = pointers.get_pointer_by_name('quest_time')
         dll_base_address = self.lm.get_module_address_by_name(module)
         quest_time_address = self.get_pointer(dll_base_address + base_pointer, pointers_)
 
@@ -117,7 +117,7 @@ class LMReadMemory:
 
     @property
     def get_username(self):
-        module, base_pointer, pointers_ = pointers.get_pointers('player_name')
+        module, base_pointer, pointers_ = pointers.get_pointer_by_name('player_name')
         dll_base_address = self.lm.get_module_address_by_name(module)
         address = self.get_pointer(dll_base_address + base_pointer, pointers_)
         value = self.read_str(address, 12)
@@ -217,7 +217,7 @@ class GuildFest(LMReadMemory):
         quest = self.get_mission_details()
         self.d_time = get_time_now()
 
-        query_result = db.cursor.execute(
+        query_result = db.cur.execute(
             'SELECT * from quests where quest_points = ? and quest_requirements = ? and quest_time = ?',
             (quest['Points'], quest['Requirements'], quest['Time'])).fetchone()
 
@@ -232,9 +232,9 @@ class GuildFest(LMReadMemory):
             return text
         else:
             save_to_history(self.d_time + '-1' + ' 0 ' + self.get_username)
-            with db.connector:
+            with db:
                 query = 'INSERT INTO quests VALUES ("","Unknown",?,?,?,"","Unknown","")'
-                db.cursor.execute(query, (quest['Points'], quest['Requirements'], quest['Time']))
+                db.cur.execute(query, (quest['Points'], quest['Requirements'], quest['Time']))
 
             bbox = (window.x + 764, window.y + 329, window.x + 1114, window.y + 622)
 
