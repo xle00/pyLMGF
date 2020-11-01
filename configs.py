@@ -60,29 +60,19 @@ class Pointers(sqlite3.Connection):
                     offsets TEXT
                 )''')
 
-    def get_pointers(self, pointer_name):
-        pointers = self.cur.execute('SELECT * from pointers where pointer_name = ?', [pointer_name]).fetchone()
-        module = pointers[1]
-        try:
-            base_pointer = int(pointers[2], 16)
-        except ValueError:
-            base_pointer = ''
+    def get_pointers(self):
+        result = self.cur.execute('select * from pointers').fetchall()
+        formatted = []
+        for r in result:
+            name, module, base, offsets = r
+            offsets = [int(offset, 16) for offset in offsets.split()]
+            formatted.append([name, module, int(base, 16), *offsets])
+        return formatted
 
-        _pointers = []
-        for i in pointers[3::]:
-            try:
-                append_i = int(i, 16)
-            except ValueError:
-                append_i = ''
-            _pointers.append(append_i)
-
-        return module, base_pointer, _pointers
-
-    def save_pointers(self, pointer_list, pointer_name):
+    def save_pointers(self, name, values):
         with self:
             query = '''
                 UPDATE pointers
-                SET module = ?, base_pointer = ?, pointer1 = ?, pointer2 = ?, pointer3 = ?, pointer4 = ?, pointer5 = ?,
-                pointer6 = ?, pointer7 = ? WHERE pointer_name = ?
+                SET module = ?, base_offset = ?, offsets = ? WHERE name = ?
             '''
-            self.cur.execute(query, pointer_list + [pointer_name])
+            self.cur.execute(query, (*values, name))

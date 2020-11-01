@@ -684,136 +684,92 @@ class ConfigGUI(tk.Toplevel):
     def __init__(self, parent):
         super(ConfigGUI, self).__init__(parent)
         from readprocessmemory import ProcessMemory
+        self.pointers = pointers.get_pointers()
         self.lmp = ProcessMemory('Lords Mobile.exe')
+        self.vars = {}
 
-        self.configure(bg='#303030', borderwidth=0, relief='flat',
-                            highlightbackground='black', highlightcolor='black')
-        self.title('pylmgf - Ponteiros')
+        self.create_pointers()
+        self.test_pointers()
 
-        self.time = self.create_inputs('Tempo', 0, 0)
-        self.quest_p = self.create_inputs('Pontos da Missão', 0, 1)
-        self.quest_r = self.create_inputs('Meta da Missão', 0, 2)
-        self.quest_t = self.create_inputs('Tempo da Missão',  1, 0)
-        self.name = self.create_inputs('Nome', 1, 1)
-        self.clock = self.create_inputs('Relógio', 1, 2)
-        self.populate_inputs(self.time, 'active_time')
-        self.populate_inputs(self.quest_p, 'quest_points')
-        self.populate_inputs(self.quest_r, 'quest_requirements')
-        self.populate_inputs(self.quest_t, 'quest_time')
-        self.populate_inputs(self.name, 'player_name')
-        self.populate_inputs(self.clock, 'clock')
+    def create_pointers(self):
+        frame = tk.Frame(self, bg='#404040')
+        frame.pack(fill='both', expand=1)
 
-        save_button = tk.Button(self, text='Salvar', width=40, height=1, bg='#202020',
-                                font='-family {Segoe UI} -size 10 -weight bold', relief='flat', fg='#fdfdfd',
-                                command=self.save_pointers)
-        save_button.grid(column=1)
-        self.test_pointers(self.time, 'string')
-        self.test_pointers(self.quest_p, 'string')
-        self.test_pointers(self.quest_r, 'string')
-        self.test_pointers(self.quest_t, 'string')
-        self.test_pointers(self.name, 'string')
-        self.test_pointers(self.clock, '4bytes')
+        for name, module, base_offset, *offsets in self.pointers:
+            f = tk.Frame(frame, bg='#404040')
+            f.pack(fill='both', expand=1)
+
+            label_frame = tk.LabelFrame(f, text=name, labelanchor='n', relief='flat', bg='#262626',
+                                        fg='#97b6d8', font=('Gadugi', 15, 'bold'), pady=5)
+            label_frame.pack(pady=4, fill='both', expand=1, side='left')
+
+            module_var = tk.StringVar(self, module)
+            module_var.trace_add('write', lambda *a, n=name: self.update_pointers(n))
+            module_entry = tk.Entry(label_frame, textvariable=module_var, width=25, bg='#404040', relief='flat',
+                                    fg='#d0d0d0', font=('Gadugi', 14))
+            module_entry.pack(side='left', padx=4, expand=1)
+
+            base_var = tk.StringVar(self, hex(base_offset)[2:].upper())
+            base_var.trace_add('write', lambda *a, n=name: self.update_pointers(n))
+            base_offset = tk.Entry(label_frame, textvariable=base_var, width=10, bg='#404040', relief='flat',
+                                   fg='#d0d0d0', font=('Gadugi', 14))
+            base_offset.pack(side='left', padx=4, expand=1)
+
+            offset_vars = []
+            for offset in offsets:
+                offset_var = tk.StringVar(self, hex(offset)[2:].upper())
+                offset_var.trace_add('write', lambda *a, n=name: self.update_pointers(n))
+                offset_entry = tk.Entry(label_frame, textvariable=offset_var, width=5, bg='#404040', relief='flat',
+                                        fg='#d0d0d0', font=('Gadugi', 14))
+                offset_entry.pack(side='left', padx=4, expand=1)
+                offset_vars.append(offset_var)
+
+            result = tk.Label(f, width=40, bg='#262626', font=('Gadugi', 14, 'bold'))
+            result.pack(side='right', pady=4, fill='both', expand=1,)
+
+            self.vars.update({name: [module_var, base_var, *offset_vars, result]})
+            self.vars.update()
+
+    def test_pointers(self):
+        for name, _vars in self.vars.items():
+            module = _vars[0].get()
+            base_addr = int(_vars[1].get(), 16)
+            offsets = [int(i.get(), 16) for i in _vars[2:-1]]
+            result_label = _vars[-1]
+
+            module_addr = self.lmp.get_module_address_by_name(module)
+            addr = self.lmp.get_pointer(module_addr + base_addr, offsets)
+
+            value = self.lmp.read_4_bytes(addr)
+            string = self.lmp.read_string(addr, 50)
+
+            if value:
+                result_label.config(text=f'{value}\n{string}', fg='#22bb55')
+            else:
+                result_label.config(text='???', fg='#ff5555')
+
+        self.after(1000, self.test_pointers)
+
+    def update_pointers(self, name):
+        _vars = self.vars[name]
+        module = _vars[0].get()
+        base_addr = _vars[1].get()
+        offsets = ' '.join([i.get() for i in _vars[2:-1]])
+        pointers.save_pointers(name, [module, base_addr, offsets])
 
 
-    def create_inputs(self, label, row, column):
-        label_frame = tk.LabelFrame(self, relief='flat', labelanchor="n",
-                                    text=label, highlightbackground="#f0f0f0f0f0f0", bg='#404040', fg='#2288fe',
-                                    )
 
-        label_frame.grid_columnconfigure(0, minsize=80)
-        label_frame.grid_columnconfigure(1, minsize=80)
-
-        module_input = tk.Entry(label_frame, width=20, relief='solid', justify=tk.CENTER, bg='#505050', fg='#ffffff',
-                                )
-        module_input.grid(row=0, column=1, padx=5)
-        module_label = tk.Label(label_frame, justify='left', text='Module: ', bg='#404040', fg='#e1e2e1')
-        module_label.grid(row=0, column=0, padx=5, sticky='w', pady=3)
-
-        base_input = tk.Entry(label_frame, width=20, relief='solid', justify=tk.CENTER, bg='#505050', fg='#ffffff',
-                              )
-        base_input.grid(row=1, column=1, padx=5)
-        base_label = tk.Label(label_frame, justify='left', text='Base Pointer: ', bg='#404040', fg='#e1e2e1')
-        base_label.grid(row=1, column=0, padx=5, sticky='w', pady=3)
-
-        for i in range(2, 9):
-            pointer_label = tk.Label(label_frame, justify='left', text=f'Pointer {i}: ', anchor='w', bg='#404040',
-                                     fg='#e1e2e1')
-            pointer_label.grid(row=i, column=0, sticky='w', padx=5)
-
-            p_input = tk.Entry(label_frame, width=20, relief='solid', justify=tk.CENTER, bg='#505050', fg='#ffffff',
-                               insertbackground='#ffffff')
-            p_input.grid(row=i, column=1, pady=3, padx=5)
-
-        label_frame.grid(row=row, column=column, padx=10, pady=10, ipadx=10)
-
-        button = tk.Button(label_frame, width=10, font='-family {Segoe UI} -size 10')
-        button.configure(text='Testar', bg='#202020', relief='flat', fg='#fdfdfd',
-                         command=lambda lf_object=label_frame: self.test_pointers(lf_object))
-        button.grid(row=9, pady=3, ipadx=10, padx=5)
-
-        output = tk.Entry(label_frame, width=20, relief='flat', bg='#404040', fg='#ffffff', justify='center')
-        output.grid(row=9, column=1, pady=3, padx=5)
-
-        return label_frame
-
-    @staticmethod
-    def populate_inputs(inputs, populator):
-        module, base_address, pointers_ = pointers.get_pointers(populator)
-        values = [module, base_address] + pointers_
-        # print(values)
-        index = 0
-        for children_name, children in inputs.children.items():
-            if type(children) is tk.Entry and children_name != '!entry10':
-                if isinstance(values[index], int):
-                    children.insert(0, str(hex(values[index]))[2::].upper())
-                else:
-                    children.insert(0, values[index])
-                index += 1
-
-    def test_pointers(self, label_frame, _type=None):
-        output_entry = label_frame.children['!entry10']
-        # print(label_frame.children.items())
-        try:
-            values = [int(child.get(), 16) for child_name, child in label_frame.children.items()
-                      if type(child) is tk.Entry and child_name != '!entry10' and child_name != '!entry']
-            _, module = list(label_frame.children.items())[0]
-            module = module.get()
-            # values.insert(0, module)
-        except ValueError as e:
-            print('Value Error', e)
-            return
-        # print(values)
-
-        base_address = self.lmp.get_module_address_by_name(module)
-        address = self.lmp.get_pointer(base_address + values[0], values[1::])
-        if _type == 'string':
-            result = self.lmp.read_string(address, 40)
-        else:
-            result = self.lmp.read_8_bytes(address)
-
-        # result = result if result else "???????"
-
-        output_entry.delete(0, tk.END)
-        if result:
-            output_entry.configure(fg='#22bb55')
-            output_entry.insert(0, result)
-        else:
-            output_entry.configure(fg='#ff5555')
-            output_entry.insert(0, '?????????')
-
-        self.after(100, self.test_pointers, label_frame, _type)
-
-    def save_pointers(self):
-        names = ['active_time', 'quest_points', 'quest_requirements', 'quest_time', 'player_name', 'clock']
-        label_frames = [lf for lf in self.children.values() if isinstance(lf, tk.LabelFrame)]
-
-        for item, name in zip(label_frames, names):
-            values = [child.get() for child_name, child in item.children.items() if
-                      type(child) is tk.Entry and child_name != '!entry10']
-            # print(values)
-            pointers.save_pointers(values, name)
-
-        self.destroy()
+    # def save_pointers(self):
+    #     names = ['active_time', 'quest_points', 'quest_requirements', 'quest_time', 'player_name', 'clock']
+    #     label_frames = [lf for lf in self.children.values() if isinstance(lf, tk.LabelFrame)]
+    #
+    #     for item, name in zip(label_frames, names):
+    #         values = [child.get() for child_name, child in item.children.items() if
+    #                   type(child) is tk.Entry and child_name != '!entry10']
+    #         # print(values)
+    #         pointers.save_pointers(values, name)
+    #
+    #     self.destroy()
 
 
 if __name__ == '__main__':
