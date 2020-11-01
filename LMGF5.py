@@ -52,7 +52,7 @@ class Slot:
         self.qid = None
 
     def __repr__(self):
-        return f'Slot: {self.number} | x: {self.x} | y: {self.y} | scroll: {self.scroll}'
+        return f'Slot: {self.number:>2} | x: {self.x:>3} | y: {self.y:>3} | scroll: {self.scroll:>2}'
 
 
 class MemoryReader(ProcessMemory):
@@ -92,13 +92,15 @@ class MemoryReader(ProcessMemory):
 
         result = []
         for name, values in pointers.items():
+            size, offset = values
+
             # get pointer
             module, base_pointer, pointers_ = self.pointers.get_pointer_by_name(name)
 
             # read string at address
             module_addr = self.get_module_address_by_name(module)
             addr = self.get_pointer(module_addr + base_pointer, pointers_)
-            value = self.read_string(addr+values[1], values[0])
+            value = self.read_string(addr+offset*2, size-offset)
             result.append(value)
 
         return result
@@ -118,6 +120,7 @@ class MemoryReader(ProcessMemory):
 class GuildFest:
     def __init__(self):
         self.slots = [Slot(number) for number in Slot.details.keys()]
+        self.sorted_slots = None
 
         self.window = ProcessWindow('UnityWndClass', 'Lords Mobile')
         self.memory = MemoryReader()
@@ -135,20 +138,33 @@ class GuildFest:
                 slot.timer = None
                 slot.target = None
                 slot.qid = self.identify_quest()
-                print(slot.qid)
+                print(self.is_selected(slot.qid))
             else:
                 timer, clock = self.memory.get_active_timer(), self.memory.get_clock()
-                print(timer)
                 slot.timer = timer
                 slot.target = clock + timer
                 slot.qid = None
 
-
+        self.sort_slots()
         self.scroll(0)
 
     def identify_quest(self):
         details = self.memory.get_mission_details()
         return self.db.identify_quest(*details)
+
+    def get_quest_name(self, qid):
+        pass
+
+    def is_selected(self, qid):
+        return qid in self.db.get_selected_ids()
+
+    def get_the_quest(self):
+        pass
+
+    def sort_slots(self):
+        self.sorted_slots = [slot for slot in self.slots.copy() if slot.timer is not None]
+        self.sorted_slots.sort(key=lambda s: s.timer, reverse=True)
+
 
 
     def scroll(self, clicks):
@@ -170,6 +186,9 @@ def main():
     fg = GuildFest()
     fg.window.activate()
     fg.get_board()
+
+    for slot in fg.sorted_slots:
+        print(slot, slot.timer)
 
 
 
