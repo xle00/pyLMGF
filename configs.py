@@ -44,8 +44,11 @@ class QuestDB(sqlite3.Connection):
         result = self.cur.execute('select quest_id from quests where is_selected = 1').fetchall()
         return [r[0] for r in result]
 
-    def get_quest_name_by_id(self, qid):
-        pass
+    def identify_quest(self, points, req, time):
+        result = self.cur.execute(
+            'SELECT quest_id from quests where quest_points = ? and quest_requirements = ? and quest_time = ?',
+            (points, req, time)).fetchone()
+        return result[0]
 
 
 class Pointers(sqlite3.Connection):
