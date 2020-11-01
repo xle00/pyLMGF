@@ -49,17 +49,6 @@ class Pointers(sqlite3.Connection):
     def __init__(self):
         super(Pointers, self).__init__('pointers.db')
         self.cur = self.cursor()
-        self.create_pointers_table()
-
-    def create_pointers_table(self):
-        with self:
-            self.cur.execute('''CREATE TABLE IF NOT EXISTS pointers (
-                name TEXT,
-                module TEXT,
-                base_offset TEXT,
-                offsets TEXT
-            ) 
-            ''')
 
     def get_pointers(self, pointer_name):
         pointers = self.cur.execute('SELECT * from pointers where pointer_name = ?', [pointer_name]).fetchone()
