@@ -356,7 +356,7 @@ class MainGUI(tk.Tk):
             treeview.insert('', 'end', qid, values=(name, f'+{points}'), tags=('normal',))
 
     def populate_buttons_frame(self):
-        buttons = [['Começar', 'call_start'], ['Configurações', 'call_config'], ['Histórico', 'call_history']]
+        buttons = [['Começar', 'call_start'], ['Configurações', 'call_config'],]
         for text, command in buttons:
             button = Button(self.buttons_frame, text=text, command=getattr(self, command, None),
                             font=FONT + '-size 18')
@@ -556,9 +556,6 @@ class MainGUI(tk.Tk):
             time_label.configure(image=time_img, text=f'{spacer}{time}', bg=bg)
             time_label.image = time_img
 
-    def call_start(self):
-        print('hi')
-
     def dragging(self, event, treeview):
         rowid = treeview.identify_row(event.y)
         treeview.selection_set(rowid)
@@ -675,6 +672,9 @@ class MainGUI(tk.Tk):
                 self.update_idletasks()
                 c.configure(font=('Gadugi', 14, 'bold'))
             self.refresh_details('sel', 1)
+
+    def call_start(self):
+        print('hi')
 
 
 class ConfigGUI:
@@ -815,154 +815,6 @@ class ConfigGUI:
             pointers.save_pointers(values, name)
 
         self.root.destroy()
-
-
-class HistoryGUI:
-    def __init__(self):
-        bg = '#202c3c'
-        self.root = tk.Tk()
-        self.root.geometry('1200x560')
-        self.root.columnconfigure(0, minsize=500)
-        self.root.resizable(0, 0)
-        self.root.title('pylmgf - Histórico')
-
-        lb_frame = tk.Frame(self.root, bg='#aa0000')
-        lb_frame.place(relx=0, relwidth=.75, rely=0, relheight=1)
-
-        self.listbox = tk.Listbox(lb_frame, height=25)
-        self.listbox.pack(fill='both')
-        self.listbox.configure(bg='#1B1F24', fg='#f0f0ff', activestyle='none', justify='left', relief='flat',
-                               font='-family {Courier New} -size 11',
-                               selectbackground='#3F5776', selectforeground='#f0f0ff', borderwidth=5,
-                               highlightcolor='black', highlightbackground='black',
-                               selectborderwidth=2, highlightthickness=0)
-        self.current_page = 0
-
-        self.populate_listbox()
-
-        detail_frame = tk.Frame(self.root, bg=bg)
-        detail_frame.place(relx=.75, relwidth=1, rely=0, relheight=1)
-
-        detail_frame.grid_columnconfigure(0, minsize=299)
-
-        self.account_label = tk.Label(detail_frame, text='', bg=bg, fg='#bcbcbc',
-                                      font='-family {Gadugi} -size 20 -weight bold', justify='center')
-        self.account_label.grid(columnspan=3, column=0, row=0, sticky='nsew')
-
-        self.date_label = tk.Label(detail_frame, text='', bg=bg, fg='#f0f0ff',
-                                   font='-family {Gadugi} -size 20 -weight bold', justify='center')
-        self.date_label.grid(columnspan=3, column=0, row=1, sticky='nsew')
-
-        self.time_label = tk.Label(detail_frame, text='', bg=bg, fg='#f0f0ff',
-                                   font='-family {Gadugi} -size 20 -weight bold', justify='center')
-        self.time_label.grid(columnspan=3, column=0, row=2, sticky='nsew')
-
-        self.img = tk.PhotoImage(master=detail_frame, file='imgs\\00.png')
-        self.img_label = tk.Label(detail_frame, image=self.img, pady=200, relief='groove',
-                                  borderwidth=0)
-        self.img_label.grid(columnspan=3, row=3, pady=10)
-
-        self.name_label = tk.Label(detail_frame, text='\n', bg=bg, fg='#F9EE54',
-                                   font='-family {Courier New} -size 12 -weight bold', justify='center')
-        self.name_label.grid(columnspan=3, column=0, row=4, sticky='nsew', pady=10)
-
-        self.points_label = tk.Label(detail_frame, text='', bg=bg, fg='#f0f0ff',
-                                     font='-family {Gadugi} -size 24 -weight bold', justify='center')
-        self.points_label.grid(columnspan=3, column=0, row=5, sticky='nsew', pady=10)
-
-        self.req_label = tk.Label(detail_frame, text='', bg=bg, fg='#f0f0ff',
-                                  font='-family {Gadugi} -size 24 -weight bold', justify='center')
-        self.req_label.grid(columnspan=3, column=0, row=6, sticky='nsew', pady=10)
-
-        self.q_time_label = tk.Label(detail_frame, text='', bg=bg, fg='#f0f0ff',
-                                     font='-family {Gadugi} -size 24 -weight bold', justify='center')
-        self.q_time_label.grid(columnspan=3, column=0, row=7, sticky='nsew', pady=10)
-
-        self.refresh_button = tk.Button(detail_frame, text='Atualizar', command=self.refresh,
-                                        font='-family {Gadugi} -size 20 -weight bold',)
-        self.refresh_button.grid(column=0, row=8, sticky='sew')
-
-        self.root.after(100, self.updater)
-
-        self.root.mainloop()
-
-    def refresh(self):
-        self.listbox.delete(0, tk.END)
-        self.populate_listbox()
-
-    def updater(self):
-        counter = 1
-        index = self.listbox.curselection()
-        if index:
-            self.account_label.config(bg='#0C1015')
-            self.date_label.config(bg='#161D26')
-            self.time_label.config(bg='#161D26')
-            try:
-                n, date, hour, *_, acc, _id, grabbed = self.listbox.get(index).split()
-                _, name, points, req, time, *_, image = db.get_quest_by_id(_id)
-            except ValueError:
-                date, hour, acc, name, points, req, time, image, grabbed = '', '', '', '', '', '', '', 0, None
-            if image:
-                self.img.configure(file=f'imgs\\{image:03d}.png')
-            else:
-                self.img.configure(file=f'imgs\\{0:03d}.png')
-
-            if grabbed == '1':
-                self.account_label.config(fg='#65E984')
-            else:
-                self.account_label.config(fg='#bcbcbc')
-
-            wrapper_length = 29
-            if len(name) > wrapper_length:
-                _name = name[:wrapper_length]
-                _name = _name[::-1]
-                _index = _name.find(' ')
-                name = name[:wrapper_length-_index-1] + '\n' + name[wrapper_length-_index:]
-            else:
-                name += '\n'
-
-            self.account_label.config(text=acc)
-            self.date_label.config(text=date)
-            self.time_label.config(text=hour)
-            self.name_label.config(text=name)
-            self.points_label.config(text='+'+str(points))
-            self.req_label.config(text='0 / '+req)
-            self.q_time_label.config(text=time)
-        counter += 1
-        self.root.after(100, self.updater)
-
-    def populate_listbox(self):
-        try:
-            with open('history.txt', 'r') as f:
-                lines = f.readlines()
-        except FileNotFoundError:
-            return
-
-        for n, line in enumerate(lines):
-
-            try:
-                year, month, day, hour, minute, second, quest_id, grabbed, account = line.split()
-            except ValueError:
-                continue
-
-            if quest_id == -1:
-                continue
-
-            limiter = 54
-            try:
-                #print(quest_id)
-                _, name, points, requirement, time, *_ = db.get_quest_by_id(quest_id)
-
-            except TypeError:
-                continue
-
-            if len(name) > limiter:
-                name = name[:limiter-2]+'..'
-
-            text = f'{n:<5}  {day}/{month}/{year} {hour}:{minute}:{second}   {name:<{limiter}}   {account:<12}' \
-                   f'   {quest_id} {grabbed}'
-
-            self.listbox.insert(tk.END, text)
 
 
 if __name__ == '__main__':
