@@ -675,18 +675,20 @@ class MainGUI(tk.Tk):
 
     def call_start(self):
         print('hi')
+        
+    def call_config(self):
+        ConfigGUI(self)
 
 
-class ConfigGUI:
-    def __init__(self):
+class ConfigGUI(tk.Toplevel):
+    def __init__(self, parent):
+        super(ConfigGUI, self).__init__(parent)
         from readprocessmemory import ProcessMemory
         self.lmp = ProcessMemory('Lords Mobile.exe')
 
-        self.root = tk.Tk()
-        self.root.resizable(0, 0)
-        self.root.configure(bg='#303030', borderwidth=0, relief='flat',
+        self.configure(bg='#303030', borderwidth=0, relief='flat',
                             highlightbackground='black', highlightcolor='black')
-        self.root.title('pylmgf - Ponteiros')
+        self.title('pylmgf - Ponteiros')
 
         self.time = self.create_inputs('Tempo', 0, 0)
         self.quest_p = self.create_inputs('Pontos da Missão', 0, 1)
@@ -701,10 +703,10 @@ class ConfigGUI:
         self.populate_inputs(self.name, 'player_name')
         self.populate_inputs(self.clock, 'clock')
 
-        save_button = tk.Button(self.root, text='Salvar', width=40, height=1, bg='#202020',
+        save_button = tk.Button(self, text='Salvar', width=40, height=1, bg='#202020',
                                 font='-family {Segoe UI} -size 10 -weight bold', relief='flat', fg='#fdfdfd',
                                 command=self.save_pointers)
-        save_button.grid(column=1, ipady=_pad, pady=_pad)
+        save_button.grid(column=1)
         self.test_pointers(self.time, 'string')
         self.test_pointers(self.quest_p, 'string')
         self.test_pointers(self.quest_r, 'string')
@@ -713,24 +715,22 @@ class ConfigGUI:
         self.test_pointers(self.clock, '4bytes')
 
 
-        self.root.mainloop()
-
     def create_inputs(self, label, row, column):
-        label_frame = tk.LabelFrame(self.root, relief='flat', labelanchor="n",
+        label_frame = tk.LabelFrame(self, relief='flat', labelanchor="n",
                                     text=label, highlightbackground="#f0f0f0f0f0f0", bg='#404040', fg='#2288fe',
-                                    font=f'-family {{Segoe UI}} -size {c_font1_size} -weight bold')
+                                    )
 
         label_frame.grid_columnconfigure(0, minsize=80)
         label_frame.grid_columnconfigure(1, minsize=80)
 
         module_input = tk.Entry(label_frame, width=20, relief='solid', justify=tk.CENTER, bg='#505050', fg='#ffffff',
-                                font=f'-family {{Segoe UI}} -size {c_font2_size}', insertbackground='#ffffff')
+                                )
         module_input.grid(row=0, column=1, padx=5)
         module_label = tk.Label(label_frame, justify='left', text='Module: ', bg='#404040', fg='#e1e2e1')
         module_label.grid(row=0, column=0, padx=5, sticky='w', pady=3)
 
         base_input = tk.Entry(label_frame, width=20, relief='solid', justify=tk.CENTER, bg='#505050', fg='#ffffff',
-                              font=f'-family {{Segoe UI}} -size {c_font2_size}', insertbackground='#ffffff')
+                              )
         base_input.grid(row=1, column=1, padx=5)
         base_label = tk.Label(label_frame, justify='left', text='Base Pointer: ', bg='#404040', fg='#e1e2e1')
         base_label.grid(row=1, column=0, padx=5, sticky='w', pady=3)
@@ -741,7 +741,7 @@ class ConfigGUI:
             pointer_label.grid(row=i, column=0, sticky='w', padx=5)
 
             p_input = tk.Entry(label_frame, width=20, relief='solid', justify=tk.CENTER, bg='#505050', fg='#ffffff',
-                               font=f'-family {{Segoe UI}} -size {c_font2_size}', insertbackground='#ffffff')
+                               insertbackground='#ffffff')
             p_input.grid(row=i, column=1, pady=3, padx=5)
 
         label_frame.grid(row=row, column=column, padx=10, pady=10, ipadx=10)
@@ -751,8 +751,7 @@ class ConfigGUI:
                          command=lambda lf_object=label_frame: self.test_pointers(lf_object))
         button.grid(row=9, pady=3, ipadx=10, padx=5)
 
-        output = tk.Entry(label_frame, width=20, relief='flat', bg='#404040', fg='#ffffff', justify='center',
-                          font=f'-family {{Segoe UI}} -size {c_font1_size} -weight bold')
+        output = tk.Entry(label_frame, width=20, relief='flat', bg='#404040', fg='#ffffff', justify='center')
         output.grid(row=9, column=1, pady=3, padx=5)
 
         return label_frame
@@ -802,11 +801,11 @@ class ConfigGUI:
             output_entry.configure(fg='#ff5555')
             output_entry.insert(0, '?????????')
 
-        self.root.after(100, self.test_pointers, label_frame, _type)
+        self.after(100, self.test_pointers, label_frame, _type)
 
     def save_pointers(self):
         names = ['active_time', 'quest_points', 'quest_requirements', 'quest_time', 'player_name', 'clock']
-        label_frames = [lf for lf in self.root.children.values() if isinstance(lf, tk.LabelFrame)]
+        label_frames = [lf for lf in self.children.values() if isinstance(lf, tk.LabelFrame)]
 
         for item, name in zip(label_frames, names):
             values = [child.get() for child_name, child in item.children.items() if
@@ -814,7 +813,7 @@ class ConfigGUI:
             # print(values)
             pointers.save_pointers(values, name)
 
-        self.root.destroy()
+        self.destroy()
 
 
 if __name__ == '__main__':
