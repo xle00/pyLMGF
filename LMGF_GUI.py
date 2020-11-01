@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 import tkinter as tk
 from tkinter import ttk
-from tkinter import font as tkfont
 from PIL import Image, ImageTk
-from random import choice
 
 from configs import QuestDB, Pointers
 
@@ -101,13 +99,10 @@ def get_most_common_color(img, border_width=1):
             except KeyError:
                 colors.update({c: 1})
 
-    #print(sorted(colors.items(), key=lambda i: i[1], reverse=True))
-
-    for c in sorted(colors.items(), key=lambda i: i[1]):
+    for c in sorted(colors.items(), key=lambda i: i[1], reverse=True):
         color = c[0]
 
-
-    return f'#{hex(color)[2:]:0>6}'
+        return f'#{hex(color)[2:]:0>6}'
 
 
 class Button(tk.Button):
@@ -642,18 +637,23 @@ class MainGUI(tk.Tk):
         children = list(frame.children.values())
         for c in children:
             self.update_idletasks()
-            c.configure(wraplength=frame.winfo_width()-10)
+            if self.main_treeview.focus():
+                c.configure(wraplength=frame.winfo_width()-10)
 
         if frame.winfo_height() < frame.winfo_reqheight():
             self.update_idletasks()
             for c in children:
-                c.configure(font=('Gadugi', 10, 'bold'))
-            self.refresh_details('main', .8)
+                if self.main_treeview.focus():
+                    c.configure(font=('Gadugi', 10, 'bold'))
+            if self.main_treeview.focus():
+                self.refresh_details('main', .8)
         else:
             self.update_idletasks()
             for c in children:
-                c.configure(font=('Gadugi', 14, 'bold'))
-            self.refresh_details('main', 1)
+                if self.main_treeview.focus():
+                    c.configure(font=('Gadugi', 14, 'bold'))
+            if self.main_treeview.focus():
+                self.refresh_details('main', 1)
 
     def resize_details2(self):
         name, frame = self.details_frame2.children.values()
