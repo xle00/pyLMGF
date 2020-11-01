@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import tkinter as tk
 from tkinter import ttk
+from tkinter import font as tkfont
 from PIL import Image, ImageTk
 from random import choice
 
@@ -16,6 +17,7 @@ MAIN_FG = '#efeee9'
 REMOVE_RED = '#e26161'
 ADD_GREEN = '#61e261'
 BUTTON_BG = '#091f26'
+font = 'Gadugi'
 
 
 def invert_on_hover(widget: tk.Widget):
@@ -39,29 +41,29 @@ def bind_hover(widget: tk.Widget, **kw):
     widget.bind('<Leave>', lambda e: widget.configure(fg=fg, bg=bg))
 
 
-def load_quest_image(img_index, height=None, width=None):
+def load_quest_image(img_index, height=None, width=None, resize=1.0):
     path = f'imgs\\quests\\{int(img_index):03d}.png'
     img = Image.open(path)
 
     if height:
-        ratio = img.height / height
+        ratio = img.height / (height*resize)
     elif width:
-        ratio = img.width / width
+        ratio = img.width / (width*resize)
     else:
         return img
     new_dimensions = int(img.width // ratio), int(img.height // ratio)
     return img.resize(new_dimensions)
 
 
-def load_icon_image(img_index, height=None, width=None):
+def load_icon_image(img_index, height=None, width=None, resize=1.0):
     img_index = 35 if not img_index else img_index
     path = f'imgs\\icons\\{int(img_index):03d}.png'
     img = Image.open(path)
 
     if height:
-        ratio = img.height / height
+        ratio = img.height / (height*resize)
     elif width:
-        ratio = img.width / width
+        ratio = img.width / (width*resize)
     else:
         return img
     new_dimensions = int(img.width // ratio), int(img.height // ratio)
@@ -169,17 +171,18 @@ class CustomStyle(ttk.Style):
                        bd=0,
                        font=('Gadugi', 14),
                        rowheight=45,
-                       background='#262626'
+                       background='#262626',
                        )
 
         # layout
         self.layout("treeview.Treeview", [
              ('treeview.Treeview.treearea', {'sticky': 'news'})])
 
-        #map
+        # map
         self.map('treeview.Treeview',
                  background=[('disabled', '#262626'), ('selected', MAIN_FG)],
                  foreground=[('disabled', MAIN_FG), ('selected', '#262626')],
+                 relief=[('selected', 'flat')]
                  )
 
     def sec_treeview_style(self):
@@ -209,7 +212,7 @@ class CustomStyle(ttk.Style):
         self.configure("sectreeview.Treeview",
                        highlightthickness=0,
                        bd=0,
-                       font=('Gadugi', 11),
+                       font=('Gadugi', 10),
                        background='#292929',
                        rowheight=25
                        )
@@ -241,12 +244,17 @@ class Label(tk.Label):
 class MainGUI(tk.Tk):
     def __init__(self):
         super(MainGUI, self).__init__()
-        #self.geometry('1210x670')
+        width, height = self.winfo_screenwidth(), self.winfo_screenheight()
+        self.width, self.height = width//2, height//2
+        self.geometry(f'{self.width}x{self.height}+{width//4}+{height//4}')
+        self.minsize(848, 450)
 
         CustomStyle(self)
 
         self.last_button = None
+        self.tab_button_font = ['Gadugi', 12, 'normal']
 
+        self.icon_column_width = 70
         self.main_treeview = TreeView(None)
         self.main_scrollbar = ttk.Scrollbar(None)
         self.focused_item = None
@@ -274,7 +282,7 @@ class MainGUI(tk.Tk):
 
         self.populate_tab_frame()
         self.populate_treeview_frame()
-        self.populate_selected_frame()
+        self.populate_sel_treeview_frame()
         self.populate_buttons_frame()
         self.populate_details_frame1()
         self.populate_details_frame2()
@@ -289,22 +297,115 @@ class MainGUI(tk.Tk):
         self.sel_treeview.bind('<B1-Motion>', lambda e, t=self.sel_treeview: self.dragging(e, t))
         self.sel_treeview.bind('<Delete>', lambda e: self.remove_from_selected())
 
-        # self.main_treeview.bind('<B2-Motion>', lambda e: print(self.main_treeview.identify_region(e.x, e.y)))
+        self.bind('<Configure>', lambda e: self.readjust(e))
+        self.readjust()
+
+    def readjust(self, event=None):
+        if event is None:
+            pass
+        elif isinstance(event.widget, MainGUI):
+            pass
+        else:
+            return
+
+        # get root dimensions
+        width, height = self.get_root_dimensions()
+
+        if self.width == width and self.height == height:
+            return
+        #print(width, height)
+
+        # readjust tabs frame
+        self.resize_tab_buttons(width)
+        self.resize_main_treeview()
+        self.resize_sel_treeview()
+        self.resize_details()
+
+        self.width, self.height = width, height
+
+    def get_root_dimensions(self):
+        width, rest = self.geometry().split('x')
+        height, *_ = rest.split('+')
+        return int(width), int(height)
+
+    def resize_tab_buttons(self, width):
+        sizes = ([1600, 13], [1500, 12], [1400, 11], [1300, 10], [1150, 9], [1050, 8], [1000, 7])
+        buttons = self.tabs_frame.children.values()
+
+        for w, size in sizes[::-1]:
+            if w >= width:
+                for button in buttons:
+                    if button is self.last_button:
+                        button.configure(font=(font, size, 'bold'))
+                    else:
+                        button.configure(font=(font, size, 'normal'))
+                break
+        else:
+            for button in buttons:
+                if button is self.last_button:
+                    button.configure(font=(font, sizes[0][1], 'bold'))
+                else:
+                    button.configure(font=(font, sizes[0][1], 'normal'))
+
+    def resize_main_treeview(self):
+        button = [widget for widget in self.treeview_frame.children.values() if isinstance(widget, tk.Button)][0]
+        treeview = self.main_treeview
+
+        self.update_idletasks()
+        req_width = button.winfo_width()
+        req_height = treeview.winfo_height()
+
+        # update scrollbar
+        rows = sum([1 for _ in treeview.get_children()])
+        rows_showed = req_height//45
+        if rows > rows_showed:
+            self.main_scrollbar.pack(side='right', fill='y')
+        else:
+            self.main_scrollbar.pack_forget()
+
+        # resize columns
+        column_1 = int((req_width-self.icon_column_width) * .87)
+        column_2 = int((req_width-self.icon_column_width) * .13)
+        treeview.column('Name', minwidth=column_1, width=column_1, stretch=0, anchor='w')
+        treeview.column('Points', minwidth=column_2, width=column_2, stretch=0, anchor='w')
+
+    def resize_sel_treeview(self):
+        treeview = self.sel_treeview
+        width = treeview.winfo_width()
+        print(width)
+
+        treeview.column('Name', minwidth=int(width*.85), width=int(width*.85), stretch=0, anchor='center')
+        treeview.column('Points', minwidth=int(width*.15), width=int(width*.15), stretch=0, anchor='center')
+
+    def resize_details(self):
+        frame = self.details_frame1
+        children = list(frame.children.values())
+        for c in children:
+            self.update_idletasks()
+            c.configure(wraplength=frame.winfo_width()-10)
+
+        if frame.winfo_height() < frame.winfo_reqheight():
+            self.update_idletasks()
+            for c in children:
+                c.configure(font=('Gadugi', 10, 'bold'))
+            self.refresh_details('main', .8)
+        else:
+            self.update_idletasks()
+            for c in children:
+                c.configure(font=('Gadugi', 14, 'bold'))
+            self.refresh_details('main', 1)
 
     def populate_tab_frame(self):
         for tab in db.get_categories():
-            button = Button(self.tabs_frame, text=tab, font=FONT+'-weight normal -size 9')
+            button = Button(self.tabs_frame, text=tab, font=self.tab_button_font)
             button['command'] = lambda t=tab, b=button: self.tab_button_command(t, b)
             button.pack(side='left', fill='both', expand=1)
 
     def populate_treeview_frame(self):
         frame = tk.Frame(self.treeview_frame, bg='#262626')
-        frame.pack(fill='both', expand=1)
+        frame.place(relx=0, rely=0, relwidth=1, relheight=.9)
 
         self.main_scrollbar = scrollbar = tk.Scrollbar(frame, orient='vertical',)
-
-        # ttk.Scrollbar(frame, orient='vertical', style='TScrollbar')
-        # scrollbar.pack(side='right', fill='y')
 
         treeview = self.main_treeview = TreeView(frame, displaycolumns='#all', height=8, show='tree',
                                                  yscrollcommand=scrollbar.set, style='treeview.Treeview')
@@ -315,37 +416,33 @@ class MainGUI(tk.Tk):
 
         button = Button(self.treeview_frame, text='Adicionar Missão', command=self.add_to_selected, fg=ADD_GREEN,
                         height=10)
-        button.pack(fill='both')
+        button.place(relx=0, rely=.9, relwidth=1, relheight=.1)
 
         treeview.heading('#0', anchor='w', text='')
         treeview.heading('Name', anchor='w', text='Missão')
         treeview.heading('Points', anchor='w', text='Pontos')
 
-        treeview.column('#0', minwidth=62, width=62, stretch=0, anchor='w')
+        treeview.column('#0', minwidth=self.icon_column_width, width=self.icon_column_width, stretch=0, anchor='w')
         treeview.column('Name', minwidth=700, width=700, stretch=0, anchor='w')
         treeview.column('Points', minwidth=112, width=112, stretch=0, anchor='w')
 
-    def populate_selected_frame(self):
-        # label = tk.Label(self.selected_quests_frame, textvariable=self.sel_label_var)
-        # label.pack(fill='both')
-
+    def populate_sel_treeview_frame(self):
         treeview = self.sel_treeview = TreeView(self.selected_quests_frame, style='sectreeview.Treeview',
                                                 height=6, show='tree', padding=(0,5,0))
         treeview.configure(columns=('Name', 'Points'))
-        treeview.pack(fill='both', expand=1)
+        treeview.place(relx=0, rely=0, relheight=.85, relwidth=1)#.pack(fill='both', expand=1)
 
-        treeview.heading('#0', anchor='n', text='')
-        treeview.heading('Name', anchor='n', text='Missão')
-        treeview.heading('Points', anchor='n', text='Pontos')
+        treeview.heading('#0', anchor='center', text='')
+        treeview.heading('Name', anchor='center', text='Missão')
+        treeview.heading('Points', anchor='center', text='Pontos')
 
-        treeview.column('#0', minwidth=0, width=0, stretch=0, anchor='n')
-        treeview.column('Name', minwidth=380, width=380, stretch=0, anchor='n')
-        treeview.column('Points', minwidth=70, width=70, stretch=0, anchor='n')
-        # print(treeview.keys())
+        treeview.column('#0', minwidth=0, width=0, stretch=0, anchor='center')
+        treeview.column('Name', minwidth=380, width=380, stretch=0, anchor='center')
+        treeview.column('Points', minwidth=70, width=70, stretch=0, anchor='center')
 
         button = Button(self.selected_quests_frame, text='Remover Missão', command=self.remove_from_selected,
                         fg=REMOVE_RED)
-        button.pack(fill='both')
+        button.place(relx=0, rely=.85, relheight=.15, relwidth=1)#pack(fill='both')
 
         treeview.tag_configure('normal', background='#262626', foreground='#d0d0d0')
 
@@ -393,13 +490,7 @@ class MainGUI(tk.Tk):
         self.main_treeview.delete(*self.main_treeview.get_children())
         quests = db.get_quests_by_category(category)
 
-        if len(quests) > self.main_treeview.cget('height'):
-            self.main_treeview.column('Points', minwidth=122, width=122)
-            self.main_scrollbar.pack(side='right', fill='y', expand=1)
-        else:
-            self.main_treeview.column('Points', minwidth=138, width=138)
-            self.main_scrollbar.pack_forget()
-
+        self.main_treeview.loaded_imgs = {}
         img_height = 44
         for quest_id, name, points, *_, selected, _, q_img, _ in quests:
             img_hash = f'{q_img}_{img_height}'
@@ -416,6 +507,8 @@ class MainGUI(tk.Tk):
             self.main_treeview.insert('', 'end', iid=quest_id, values=(name, f'+{points}'), image=img, tags=tags)
             self.main_treeview.tag_configure('normal', background='#262626', foreground='#d0d0d0', )
             self.main_treeview.tag_configure('selected', background='#d1ae62', foreground='#262626', )
+
+        self.resize_main_treeview()
 
     def add_to_selected(self):
         selected = self.get_selected_from_main()
@@ -450,19 +543,28 @@ class MainGUI(tk.Tk):
 
             # refresh main treeview to update selected colors
             q_id = self.main_treeview.selection()
-            self.populate_main_treeview(self.last_button.cget('text'))
+            if self.last_button:
+                self.populate_main_treeview(self.last_button.cget('text'))
             self.main_treeview.selection_set(*q_id)
-            self.main_treeview.focus(q_id[-1])
+            try:
+                self.main_treeview.focus(q_id[-1])
+            except IndexError:
+                return
 
     def tab_button_command(self, tab, button):
         unbind_invert(button)
+
         if self.last_button:
             if button is self.last_button:
                 return
-            self.last_button.configure(bg='#262626', fg=MAIN_FG, font=FONT + '-size 9 -weight normal')
+
+            self.last_button.configure(bg='#262626', fg=MAIN_FG)
             bind_hover(self.last_button, bg='#565656')
-        button.configure(bg=MAIN_FG, fg='#262626', font='-weight bold')
+
+        button.configure(bg=MAIN_FG, fg='#262626')
         self.last_button = button
+
+        self.resize_tab_buttons(self.width)
 
         self.populate_main_treeview(tab)
 
@@ -494,7 +596,7 @@ class MainGUI(tk.Tk):
 
         self.after(100, self.change_listener)
 
-    def refresh_details(self, which):
+    def refresh_details(self, which, resize=1.0):
         if which == 'main':
             name_label, points_label, req_label, time_label = self.details_frame1.children.values()
             _id = self.focused_item
@@ -522,20 +624,20 @@ class MainGUI(tk.Tk):
         else:
             _, name, points, req, time, *_, quest_img, quest_icon = db.get_quest_by_id(_id)
 
-            img = load_quest_image(quest_img)
+            img = load_quest_image(quest_img, resize=resize)
             bg = get_most_common_color(img)
             r, g, b = [int(x, 16) for x in (bg[1:3], bg[3:5], bg[5:])]
 
-            while (r+g+b)//3 > 50:
+            while (r+g+b)//3 > 45:
                 r *= .9
                 g *= .9
                 b *= .9
-                bg = f'#{hex((int(r)*256*256 + int(g)*256 + int(b)))[2:]:0>6}'
+            bg = f'#{hex((int(r)*256*256 + int(g)*256 + int(b)))[2:]:0>6}'
 
             name_img = ImageTk.PhotoImage(img, 2)
-            points_img = ImageTk.PhotoImage(load_icon_image(66, height=40))
-            req_img = ImageTk.PhotoImage(load_icon_image(quest_icon, height=40))
-            time_img = ImageTk.PhotoImage(load_icon_image(11, height=40))
+            points_img = ImageTk.PhotoImage(load_icon_image(66, height=40, resize=resize))
+            req_img = ImageTk.PhotoImage(load_icon_image(quest_icon, height=40, resize=resize))
+            time_img = ImageTk.PhotoImage(load_icon_image(11, height=40, resize=resize))
 
             name_label.configure(image=name_img, text=name, bg=bg)
             name_label.image = name_img

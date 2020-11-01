@@ -18,7 +18,6 @@ class QuestDB(sqlite3.Connection):
         return quests
 
     def set_selected(self, quest_id_list):
-        print(quest_id_list)
         with self:
             for quest in quest_id_list:
                 self.cur.execute('update quests SET is_selected = 1 where quest_id = ?', [quest])
