@@ -43,3 +43,36 @@ class QuestDB(sqlite3.Connection):
     def get_selected_ids(self):
         result = self.cur.execute('select quest_id from quests where is_selected = 1').fetchall()
         return [r[0] for r in result]
+
+
+class Pointers(sqlite3.Connection):
+    def __init__(self):
+        super(Pointers, self).__init__('pointers.db')
+        self.cur = self.cursor()
+        self.create_pointers_table()
+
+    def create_pointers_table(self):
+        with self:
+            self.cur.execute('''CREATE TABLE IF NOT EXISTS pointers (
+                    name TEXT,
+                    module TEXT,
+                    base_offset TEXT,
+                    offsets TEXT
+                )''')
+
+    def get_pointers(self):
+        result = self.cur.execute('select * from pointers').fetchall()
+        formatted = []
+        for r in result:
+            name, module, base, offsets = r
+            offsets = [int(offset, 16) for offset in offsets.split()]
+            formatted.append([name, module, int(base, 16), *offsets])
+        return formatted
+
+    def save_pointers(self, name, values):
+        with self:
+            query = '''
+                UPDATE pointers
+                SET module = ?, base_offset = ?, offsets = ? WHERE name = ?
+            '''
+            self.cur.execute(query, (*values, name))
