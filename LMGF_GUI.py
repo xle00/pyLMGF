@@ -675,7 +675,7 @@ class MainGUI(tk.Tk):
 
     def call_start(self):
         print('hi')
-        
+
     def call_config(self):
         ConfigGUI(self)
 
