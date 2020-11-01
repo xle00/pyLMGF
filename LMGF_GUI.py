@@ -247,7 +247,7 @@ class MainGUI(tk.Tk):
         width, height = self.winfo_screenwidth(), self.winfo_screenheight()
         self.width, self.height = width//2, height//2
         self.geometry(f'{self.width}x{self.height}+{width//4}+{height//4}')
-        self.minsize(848, 450)
+        self.minsize(850, 550)
 
         CustomStyle(self)
 
@@ -299,101 +299,6 @@ class MainGUI(tk.Tk):
 
         self.bind('<Configure>', lambda e: self.readjust(e))
         self.readjust()
-
-    def readjust(self, event=None):
-        if event is None:
-            pass
-        elif isinstance(event.widget, MainGUI):
-            pass
-        else:
-            return
-
-        # get root dimensions
-        width, height = self.get_root_dimensions()
-
-        if self.width == width and self.height == height:
-            return
-        #print(width, height)
-
-        # readjust tabs frame
-        self.resize_tab_buttons(width)
-        self.resize_main_treeview()
-        self.resize_sel_treeview()
-        self.resize_details()
-
-        self.width, self.height = width, height
-
-    def get_root_dimensions(self):
-        width, rest = self.geometry().split('x')
-        height, *_ = rest.split('+')
-        return int(width), int(height)
-
-    def resize_tab_buttons(self, width):
-        sizes = ([1600, 13], [1500, 12], [1400, 11], [1300, 10], [1150, 9], [1050, 8], [1000, 7])
-        buttons = self.tabs_frame.children.values()
-
-        for w, size in sizes[::-1]:
-            if w >= width:
-                for button in buttons:
-                    if button is self.last_button:
-                        button.configure(font=(font, size, 'bold'))
-                    else:
-                        button.configure(font=(font, size, 'normal'))
-                break
-        else:
-            for button in buttons:
-                if button is self.last_button:
-                    button.configure(font=(font, sizes[0][1], 'bold'))
-                else:
-                    button.configure(font=(font, sizes[0][1], 'normal'))
-
-    def resize_main_treeview(self):
-        button = [widget for widget in self.treeview_frame.children.values() if isinstance(widget, tk.Button)][0]
-        treeview = self.main_treeview
-
-        self.update_idletasks()
-        req_width = button.winfo_width()
-        req_height = treeview.winfo_height()
-
-        # update scrollbar
-        rows = sum([1 for _ in treeview.get_children()])
-        rows_showed = req_height//45
-        if rows > rows_showed:
-            self.main_scrollbar.pack(side='right', fill='y')
-        else:
-            self.main_scrollbar.pack_forget()
-
-        # resize columns
-        column_1 = int((req_width-self.icon_column_width) * .87)
-        column_2 = int((req_width-self.icon_column_width) * .13)
-        treeview.column('Name', minwidth=column_1, width=column_1, stretch=0, anchor='w')
-        treeview.column('Points', minwidth=column_2, width=column_2, stretch=0, anchor='w')
-
-    def resize_sel_treeview(self):
-        treeview = self.sel_treeview
-        width = treeview.winfo_width()
-        print(width)
-
-        treeview.column('Name', minwidth=int(width*.85), width=int(width*.85), stretch=0, anchor='center')
-        treeview.column('Points', minwidth=int(width*.15), width=int(width*.15), stretch=0, anchor='center')
-
-    def resize_details(self):
-        frame = self.details_frame1
-        children = list(frame.children.values())
-        for c in children:
-            self.update_idletasks()
-            c.configure(wraplength=frame.winfo_width()-10)
-
-        if frame.winfo_height() < frame.winfo_reqheight():
-            self.update_idletasks()
-            for c in children:
-                c.configure(font=('Gadugi', 10, 'bold'))
-            self.refresh_details('main', .8)
-        else:
-            self.update_idletasks()
-            for c in children:
-                c.configure(font=('Gadugi', 14, 'bold'))
-            self.refresh_details('main', 1)
 
     def populate_tab_frame(self):
         for tab in db.get_categories():
@@ -658,6 +563,118 @@ class MainGUI(tk.Tk):
         rowid = treeview.identify_row(event.y)
         treeview.selection_set(rowid)
         treeview.focus(rowid)
+
+    def readjust(self, event=None):
+        if event is None:
+            pass
+        elif isinstance(event.widget, MainGUI):
+            pass
+        else:
+            return
+
+        # get root dimensions
+        width, height = self.get_root_dimensions()
+
+        if self.width == width and self.height == height:
+            return
+
+        # readjust widgets
+        self.resize_tab_buttons(width)
+        self.resize_main_treeview()
+        self.resize_sel_treeview()
+        self.resize_details1()
+        self.resize_details2()
+
+        self.width, self.height = width, height
+
+    def get_root_dimensions(self):
+        width, rest = self.geometry().split('x')
+        height, *_ = rest.split('+')
+        return int(width), int(height)
+
+    def resize_tab_buttons(self, width):
+        sizes = ([1600, 13], [1500, 12], [1400, 11], [1300, 10], [1150, 9], [1050, 8], [1000, 7])
+        buttons = self.tabs_frame.children.values()
+
+        for w, size in sizes[::-1]:
+            if w >= width:
+                for button in buttons:
+                    if button is self.last_button:
+                        button.configure(font=(font, size, 'bold'))
+                    else:
+                        button.configure(font=(font, size, 'normal'))
+                break
+        else:
+            for button in buttons:
+                if button is self.last_button:
+                    button.configure(font=(font, sizes[0][1], 'bold'))
+                else:
+                    button.configure(font=(font, sizes[0][1], 'normal'))
+
+    def resize_main_treeview(self):
+        button = [widget for widget in self.treeview_frame.children.values() if isinstance(widget, tk.Button)][0]
+        treeview = self.main_treeview
+
+        self.update_idletasks()
+        req_width = button.winfo_width()
+        req_height = treeview.winfo_height()
+
+        # update scrollbar
+        rows = sum([1 for _ in treeview.get_children()])
+        rows_showed = req_height//45
+        if rows > rows_showed:
+            self.main_scrollbar.pack(side='right', fill='y')
+        else:
+            self.main_scrollbar.pack_forget()
+
+        # resize columns
+        column_1 = int((req_width-self.icon_column_width) * .87)
+        column_2 = int((req_width-self.icon_column_width) * .13)
+        treeview.column('Name', minwidth=column_1, width=column_1, stretch=0, anchor='w')
+        treeview.column('Points', minwidth=column_2, width=column_2, stretch=0, anchor='w')
+
+    def resize_sel_treeview(self):
+        treeview = self.sel_treeview
+        width = treeview.winfo_width()
+
+        treeview.column('Name', minwidth=int(width*.85), width=int(width*.85), stretch=0, anchor='center')
+        treeview.column('Points', minwidth=int(width*.15), width=int(width*.15), stretch=0, anchor='center')
+
+    def resize_details1(self):
+        frame = self.details_frame1
+        children = list(frame.children.values())
+        for c in children:
+            self.update_idletasks()
+            c.configure(wraplength=frame.winfo_width()-10)
+
+        if frame.winfo_height() < frame.winfo_reqheight():
+            self.update_idletasks()
+            for c in children:
+                c.configure(font=('Gadugi', 10, 'bold'))
+            self.refresh_details('main', .8)
+        else:
+            self.update_idletasks()
+            for c in children:
+                c.configure(font=('Gadugi', 14, 'bold'))
+            self.refresh_details('main', 1)
+
+    def resize_details2(self):
+        name, frame = self.details_frame2.children.values()
+        name.configure(wraplength=name.winfo_width()-120-10)
+        children = [name] + list(frame.children.values())
+
+        if frame.winfo_height() < frame.winfo_reqheight():
+            self.update_idletasks()
+            for c in children:
+                self.update_idletasks()
+                c.configure(font=('Gadugi', 10, 'bold'))
+            self.refresh_details('sel', .8)
+        else:
+            self.update_idletasks()
+            for c in children:
+                self.update_idletasks()
+                c.configure(font=('Gadugi', 14, 'bold'))
+            self.refresh_details('sel', 1)
 
 
 class ConfigGUI:
