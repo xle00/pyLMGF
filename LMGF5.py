@@ -5,7 +5,10 @@ from configs import Pointers, QuestDB
 from mss import mss
 from PIL import ImageGrab
 import os
+import pushbullet
+import sys
 
+pb = pushbullet.PushBullet()
 sct = mss()
 
 
@@ -15,6 +18,10 @@ def get_pixel_brightness(x, y):
     # noinspection PyTypeChecker
     pixel = list(img.pixels[0][0])
     return sum(pixel) / len(pixel)
+
+
+def handle_close():
+    sys.exit()
 
 
 class Slot:
@@ -141,19 +148,8 @@ class GuildFest:
             time.sleep(.1)
             if self.is_quest():
                 self.identify_quest()
-                # slot.timer = None
-                # slot.target = None
-                # slot.qid = self.identify_quest()
-                #
-                # self.get_quest_name(slot.qid)
-                # if self.is_selected(slot.qid):
-                #     self.get_the_quest()
-
             else:
-                timer, clock = self.memory.get_active_timer(), self.memory.get_clock()
-                slot.timer = timer
-                slot.target = clock + timer
-                slot.qid = None
+                self.get_timer()
 
         self.sort_slots()
         self.scroll(0)
@@ -167,16 +163,21 @@ class GuildFest:
         slot.target = None
         slot.qid = qid
 
-        self.get_quest_name(slot.qid)
+        print(self.get_quest_name(slot.qid))
         if self.is_selected(slot.qid):
             self.get_the_quest()
 
-        self.get_quest_name(qid)
-
         return qid
 
+    def get_timer(self):
+        timer, clock = self.memory.get_active_timer(), self.memory.get_clock()
+        self.current_slot.timer = timer
+        self.current_slot.target = clock + timer
+        self.current_slot.qid = None
+
     def get_quest_name(self, qid):
-        print(self.db.get_quest_by_id(qid))
+        _, name, points, *_ = self.db.get_quest_by_id(qid)
+        return f'{name}, +{points}'
 
     def is_selected(self, qid):
         return qid in self.db.get_selected_ids()
@@ -184,24 +185,22 @@ class GuildFest:
     def get_the_quest(self):
         Mouse.left_click(self.window.x + 867, self.window.y + 679)
 
-        time.sleep(4)
+        # time.sleep(4)
         brightness = get_pixel_brightness(self.window.x + 885, self.window.y + 354)
         if brightness < 127:
             print('Erro ao pegar missão\n')
             return
 
-        img = ImageGrab.grab(self.window.x + 764, self.window.y + 329, self.window.x + 1114, self.window.y + 622)
-        img.save('temp.jpeg')
+        self.screenshot_quest()
 
-        # pb.push_img('tempimage.jpeg', title=f'Missão Pronta [{self.get_username}]', body=text)
-        # pb.push_img('tempimage.jpeg', email='thallesrafael1402@gmail.com',
+        # pb.push_img('temp.jpeg',
+        #             title=f'{self.get_quest_name(self.current_slot.qid)} {self.memory.get_player_name()}')
+        # pb.push_img('temp.jpeg', email='thallesrafael1402@gmail.com',
         #            title=f'Missão Pronta [{self.get_username}]', body=text)
 
-        # os.remove('temp.jpeg')
+        os.remove('temp.jpeg')
 
-        print(self.db.get_quest_by_id(self.current_slot.qid))
-
-        self.running = False
+        handle_close()
 
     def sort_slots(self):
         self.sorted_slots = [slot for slot in self.slots.copy() if slot.timer is not None]
@@ -244,6 +243,10 @@ class GuildFest:
             return False
         return True
 
+    def screenshot_quest(self):
+        img = ImageGrab.grab(bbox=(self.window.x + 764, self.window.y + 329, self.window.x + 1114, self.window.y + 622))
+        img.save('temp.jpeg')
+
 
 def main():
     wait_timer = 2*60
@@ -279,9 +282,6 @@ def main():
                 time.sleep(.5)
                 fg.window.get_position()
                 fg.wait_quest()
-
-
-
 
 
 if __name__ == '__main__':
