@@ -3,7 +3,8 @@ from Mouse import Mouse
 from Process import ProcessMemory, ProcessWindow
 from configs import Pointers, QuestDB
 from mss import mss
-import ctypes
+from PIL import ImageGrab
+import os
 
 sct = mss()
 
@@ -119,8 +120,11 @@ class MemoryReader(ProcessMemory):
 
 class GuildFest:
     def __init__(self):
+        self.running = True
+
         self.slots = [Slot(number) for number in Slot.details.keys()]
         self.sorted_slots = None
+        self.current_slot = None
 
         self.window = ProcessWindow('UnityWndClass', 'Lords Mobile')
         self.memory = MemoryReader()
@@ -132,13 +136,19 @@ class GuildFest:
         for slot in self.slots:
             self.scroll(slot.scroll)
             Mouse.left_click(self.window.x + slot.x, self.window.y + slot.y)
+            self.current_slot = slot
 
             time.sleep(.1)
             if self.is_quest():
-                slot.timer = None
-                slot.target = None
-                slot.qid = self.identify_quest()
-                print(self.is_selected(slot.qid))
+                self.identify_quest()
+                # slot.timer = None
+                # slot.target = None
+                # slot.qid = self.identify_quest()
+                #
+                # self.get_quest_name(slot.qid)
+                # if self.is_selected(slot.qid):
+                #     self.get_the_quest()
+
             else:
                 timer, clock = self.memory.get_active_timer(), self.memory.get_clock()
                 slot.timer = timer
@@ -149,23 +159,80 @@ class GuildFest:
         self.scroll(0)
 
     def identify_quest(self):
+        slot = self.current_slot
         details = self.memory.get_mission_details()
-        return self.db.identify_quest(*details)
+        qid = self.db.identify_quest(*details)
+
+        slot.timer = None
+        slot.target = None
+        slot.qid = qid
+
+        self.get_quest_name(slot.qid)
+        if self.is_selected(slot.qid):
+            self.get_the_quest()
+
+        self.get_quest_name(qid)
+
+        return qid
 
     def get_quest_name(self, qid):
-        pass
+        print(self.db.get_quest_by_id(qid))
 
     def is_selected(self, qid):
         return qid in self.db.get_selected_ids()
 
     def get_the_quest(self):
-        pass
+        Mouse.left_click(self.window.x + 867, self.window.y + 679)
+
+        time.sleep(4)
+        brightness = get_pixel_brightness(self.window.x + 885, self.window.y + 354)
+        if brightness < 127:
+            print('Erro ao pegar missão\n')
+            return
+
+        img = ImageGrab.grab(self.window.x + 764, self.window.y + 329, self.window.x + 1114, self.window.y + 622)
+        img.save('temp.jpeg')
+
+        # pb.push_img('tempimage.jpeg', title=f'Missão Pronta [{self.get_username}]', body=text)
+        # pb.push_img('tempimage.jpeg', email='thallesrafael1402@gmail.com',
+        #            title=f'Missão Pronta [{self.get_username}]', body=text)
+
+        # os.remove('temp.jpeg')
+
+        print(self.db.get_quest_by_id(self.current_slot.qid))
+
+        self.running = False
 
     def sort_slots(self):
         self.sorted_slots = [slot for slot in self.slots.copy() if slot.timer is not None]
         self.sorted_slots.sort(key=lambda s: s.timer, reverse=True)
 
+    def go_to_slot(self, slot: Slot):
+        self.window.activate()
+        self.window.get_position()
 
+        self.current_slot = slot
+
+        self.scroll(slot.scroll)
+
+        Mouse.left_click(self.window.x + slot.x, self.window.y + slot.y)
+        time.sleep(.051)
+
+        self.scroll(0)
+
+    def wait_quest(self):
+        Mouse.set_pos(self.window.x + 542, self.window.y + 521)
+
+        brightness = get_pixel_brightness(self.window.x + 885, self.window.y + 354)
+
+        timer = time.perf_counter()
+        while brightness < 127:
+            brightness = get_pixel_brightness(self.window.x + 885, self.window.y + 354)
+            if time.perf_counter()-timer > 10:
+                break
+        else:
+            if self.is_selected(self.identify_quest()):
+                self.get_the_quest()
 
     def scroll(self, clicks):
         Mouse.wheel(clicks - self.current_scroll, self.window.x + 303, self.window.y + 587, .008)
@@ -178,17 +245,41 @@ class GuildFest:
         return True
 
 
-
-
-
-
 def main():
+    wait_timer = 2*60
     fg = GuildFest()
-    fg.window.activate()
-    fg.get_board()
+    check_slot = 0
 
-    for slot in fg.sorted_slots:
-        print(slot, slot.timer)
+    while fg.running:
+        fg.window.activate()
+        fg.get_board()
+
+        while fg.sorted_slots:
+            # print(check_lowest)
+            slot = fg.sorted_slots.pop()
+            fg.go_to_slot(slot)
+
+            if fg.is_quest():
+                if fg.is_selected(fg.identify_quest()):
+                    fg.get_the_quest()
+            else:
+                active_timer = fg.memory.get_active_timer()
+                print(check_slot)
+                if active_timer > wait_timer and check_slot != slot.number:
+                    check_slot = slot.number
+                    break
+                elif active_timer > wait_timer and check_slot == slot.number:
+                    time.sleep(active_timer - wait_timer)
+
+                clock = fg.memory.get_clock()
+                while clock < slot.target - 5:
+                    clock = fg.memory.get_clock()
+
+                fg.window.activate()
+                time.sleep(.5)
+                fg.window.get_position()
+                fg.wait_quest()
+
 
 
 
