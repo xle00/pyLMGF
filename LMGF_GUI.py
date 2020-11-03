@@ -674,7 +674,7 @@ class MainGUI(tk.Tk):
             self.refresh_details('sel', 1)
 
     def call_start(self):
-        from LMGF4 import main
+        from LMGF5 import main
         self.destroy()
         main()
 
