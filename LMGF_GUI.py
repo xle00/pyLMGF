@@ -551,7 +551,8 @@ class MainGUI(tk.Tk):
             time_label.configure(image=time_img, text=f'{spacer}{time}', bg=bg)
             time_label.image = time_img
 
-    def dragging(self, event, treeview):
+    @staticmethod
+    def dragging(event, treeview):
         rowid = treeview.identify_row(event.y)
         treeview.selection_set(rowid)
         treeview.focus(rowid)
@@ -677,7 +678,6 @@ class MainGUI(tk.Tk):
         from LMGF5 import main
         self.destroy()
         main()
-
 
     def call_pointers(self):
         import pointers_GUI
