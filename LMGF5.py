@@ -1,7 +1,7 @@
 import time
 from Mouse import Mouse
 from Process import ProcessMemory, ProcessWindow
-from configs import Pointers, QuestDB
+from databases import Pointers, QuestDB
 from mss import mss
 from PIL import ImageGrab
 import os

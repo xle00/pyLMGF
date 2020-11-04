@@ -1,5 +1,5 @@
 import tkinter as tk
-from configs import Pointers
+from databases import Pointers
 
 pointers = Pointers()
 

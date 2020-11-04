@@ -2,7 +2,7 @@ import sqlite3
 import tkinter as tk
 import random
 import datetime
-from configs import QuestDB
+from databases import QuestDB
 from PIL import ImageTk, Image
 db = QuestDB()
 
