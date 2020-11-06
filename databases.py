@@ -34,11 +34,23 @@ class QuestDB(sqlite3.Connection):
         result = self.cur.execute('SELECT id FROM quests2 WHERE selected = 1').fetchall()
         return [r[0] for r in result]
 
-    def identify_quest(self, points, req, time):
+    def identify_quest(self, points, req, time, name=None):
         result = self.cur.execute(
-            'SELECT quest_id FROM quests2 WHERE points = ? AND req = ? AND time = ?',
-            (points, req, time)).fetchone()
-        return result[0]
+            'SELECT id, ambig FROM quests2 WHERE points = ? AND req = ? AND time = ?',
+            (points, req, time)).fetchall()
+        if len(result) == 1:
+            return result[0][0]
+        else:
+            return self.resolve_ambiguity(result, name)
+
+    def resolve_ambiguity(self, quests: iter, name: str):
+        name = name.lower()
+        for qid, ambid in quests:
+            # print(qid)
+            partial = self.cur.execute('SELECT name FROM ambigs WHERE id = ?', (ambid,)).fetchone()[0]
+            if partial in name:
+                return qid
+
 
 
 class Pointers(sqlite3.Connection):

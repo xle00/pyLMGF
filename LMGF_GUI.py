@@ -176,7 +176,10 @@ class MainGUI(tk.Tk):
 
         self.main_treeview.loaded_imgs = {}
         img_height = 44
-        for quest_id, name, points, *_, selected, _, q_img, _ in quests:
+        print()
+        for quest_id, name, points, req, time, *_, selected, _, q_img, _ in quests:
+
+            print(quest_id == db.identify_quest(points, req, time, name))
             img_hash = f'{q_img}_{img_height}'
 
             if img_hash in self.main_treeview.loaded_imgs.keys():
