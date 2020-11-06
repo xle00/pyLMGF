@@ -7,46 +7,36 @@ class QuestDB(sqlite3.Connection):
         super(QuestDB, self).__init__('quests.db')
         self.cur = self.cursor()
 
-    @property
-    def quest_db(self):
-        quests = self.cur.execute('select * from quests').fetchall()
-        return quests
-
-    @property
-    def selected(self):
-        quests = self.cur.execute('select * from quests where is_selected = 1').fetchall()
-        return quests
-
     def set_selected(self, quest_id_list):
+        subquery = f"({','.join(['?'] * len(quest_id_list))})"
         with self:
-            for quest in quest_id_list:
-                self.cur.execute('update quests SET is_selected = 1 where quest_id = ?', [quest])
+            self.cur.execute(f'UPDATE quests2 SET selected = 1 WHERE id IN {subquery}', quest_id_list)
 
     def set_unselected(self, quest_id_list):
+        subquery = f"({','.join(['?']*len(quest_id_list))})"
         with self:
-            for quest in quest_id_list:
-                self.cur.execute('update quests SET is_selected = Null where quest_id = ?', [quest])
+            self.cur.execute(f'UPDATE quests2 SET selected = Null WHERE id IN {subquery}', quest_id_list)
 
     def get_quest_by_id(self, quest_id):
-        quest = self.cur.execute('select * from quests where quest_id = ?', [quest_id]).fetchone()
+        quest = self.cur.execute('SELECT * FROM quests2 WHERE id = ?', (quest_id,)).fetchone()
         return quest
 
     def get_categories(self):
-        result = self.cur.execute('SELECT tab_name FROM quests').fetchall()
+        result = self.cur.execute('SELECT category FROM quests2').fetchall()
         result = set(result)
         return sorted([r[0] for r in result], key=lambda i: i.lower())
 
     def get_quests_by_category(self, category):
-        result = self.cur.execute('select * from quests where tab_name = ? order by quest_name', (category,)).fetchall()
+        result = self.cur.execute('SELECT * FROM quests2 where category = ? ORDER BY name', (category,)).fetchall()
         return result
 
     def get_selected_ids(self):
-        result = self.cur.execute('select quest_id from quests where is_selected = 1').fetchall()
+        result = self.cur.execute('SELECT id FROM quests2 WHERE selected = 1').fetchall()
         return [r[0] for r in result]
 
     def identify_quest(self, points, req, time):
         result = self.cur.execute(
-            'SELECT quest_id from quests where quest_points = ? and quest_requirements = ? and quest_time = ?',
+            'SELECT quest_id FROM quests2 WHERE points = ? AND req = ? AND time = ?',
             (points, req, time)).fetchone()
         return result[0]
 
