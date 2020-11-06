@@ -1,7 +1,7 @@
 import time
 from Mouse import Mouse
 from Process import ProcessMemory, ProcessWindow
-from databases import Pointers, QuestDB
+from databases import Pointers, QuestDB, HistoryDB
 from mss import mss
 from PIL import ImageGrab
 import os
@@ -10,6 +10,7 @@ import sys
 
 pb = pushbullet.PushBullet()
 sct = mss()
+hist = HistoryDB()
 
 
 def get_pixel_brightness(x, y):
@@ -57,6 +58,7 @@ class Slot:
         self.y = d.get('pixel_y')
 
         self.timer = None
+        self.target = None
         self.qid = None
 
     def __repr__(self):
@@ -257,14 +259,40 @@ class GuildFest:
         img.save('temp.jpeg')
 
 
+def save_history(sid, slot: Slot, _time):
+    last_identifier = hist.get_last_identifier(sid, slot.number)
+    if slot.timer is not None:
+        if last_identifier == 't':
+            return
+
+        hist.insert_history(sid, _time, 't', slot.number, slot.timer)
+
+    elif slot.qid is not None:
+        if last_identifier == 'q':
+            return
+
+        hist.insert_history(sid, _time, 'q', slot.number, slot.qid)
+
+
+
+
+
 def main():
     wait_timer = 2*60
     fg = GuildFest()
     check_slot = 0
 
-    while fg.running:
+    # create "session" for history
+    start = int(time.time())
+    selected = fg.db.get_selected_ids()
+    sid = hist.get_highest_sid() + 1
+    # hist.insert_session(sid, fg.memory.get_player_name(), start, 0, selected)
+
+    while True:
         fg.window.activate()
         fg.get_board()
+        # for slot in fg.slots:
+        #     save_history(sid, slot, time.time() - start)
 
         while fg.sorted_slots:
             slot = fg.sorted_slots.pop()

@@ -136,6 +136,10 @@ class HistoryDB(sqlite3.Connection):
         result = self.cur.execute('SELECT * FROM indexes where sid = ?', (sid,)).fetchone()
         return result
 
+    def set_session_end(self, sid, timestamp):
+        with self:
+            self.cur.execute('UPDATE indexes SET end = ? where sid = ?', (timestamp, sid))
+
     def insert_history(self, sid: int, time: int, identifier: str, slot: int, value: int):
         with self:
             self.cur.execute('''INSERT INTO history VALUES (?, ?, ?, ?, ?)''', (sid, time, identifier, slot, value))
@@ -143,4 +147,9 @@ class HistoryDB(sqlite3.Connection):
     def get_history_by_sid(self, sid):
         result = self.cur.execute('SELECT * FROM history where sid = ? order by rowid', (sid,)).fetchall()
         print(result)
+        return result
+
+    def get_last_identifier(self, sid, slot):
+        result = self.cur.execute('SELECT identifier FROM history WHERE sid = ? AND SLOT = ? ORDER BY rowid DESC',
+                                  (sid, slot)).fetchone()
         return result
