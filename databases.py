@@ -89,3 +89,58 @@ class Pointers(sqlite3.Connection):
                 SET module = ?, base_offset = ?, offsets = ? WHERE name = ?
             '''
             self.cur.execute(query, (*values, name))
+
+
+class HistoryDB(sqlite3.Connection):
+    def __init__(self):
+        super(HistoryDB, self).__init__('history.db')
+        self.cur = self.cursor()
+        self.create_indexes_table()
+        self.create_history_table()
+
+    def create_history_table(self):
+        with self:
+            self.cur.execute('''CREATE TABLE IF NOT EXISTS history (
+                sid INTEGER,
+                time INTEGER,
+                identifier TEXT,
+                slot INTEGER,
+                value INTEGER
+            )''')
+
+    def create_indexes_table(self):
+        with self:
+            self.cur.execute('''CREATE TABLE IF NOT EXISTS indexes (
+                sid INTEGER,
+                name TEXT,
+                start INTEGER,
+                end INTEGER,
+                selected STRING,
+                found INTEGER
+            )''')
+
+    def get_highest_sid(self):
+        result = self.cur.execute('SELECT sid FROM indexes order by sid DESC').fetchone()
+        return -1 if not result else result[0]
+
+    def insert_session(self, sid: int, name: str, start: int, end: int, selected: iter):
+        selected = ','.join(selected)
+        with self:
+            self.cur.execute('INSERT INTO indexes VALUES (?, ?, ?, ?, ?, Null)', (sid, name, start, end, selected))
+
+    def get_sessions(self):
+        result = self.cur.execute('SELECT * FROM indexes').fetchall()
+        return result
+
+    def get_session_by_sid(self, sid):
+        result = self.cur.execute('SELECT * FROM indexes where sid = ?', (sid,)).fetchone()
+        return result
+
+    def insert_history(self, sid: int, time: int, identifier: str, slot: int, value: int):
+        with self:
+            self.cur.execute('''INSERT INTO history VALUES (?, ?, ?, ?, ?)''', (sid, time, identifier, slot, value))
+
+    def get_history_by_sid(self, sid):
+        result = self.cur.execute('SELECT * FROM history where sid = ? order by rowid', (sid,)).fetchall()
+        print(result)
+        return result

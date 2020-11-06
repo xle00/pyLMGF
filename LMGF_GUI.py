@@ -4,6 +4,7 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 
 from databases import QuestDB, Pointers
+from functions import *
 
 db = QuestDB()
 pointers = Pointers()
@@ -16,93 +17,6 @@ REMOVE_RED = '#e26161'
 ADD_GREEN = '#61e261'
 BUTTON_BG = '#091f26'
 font = 'Gadugi'
-
-
-def invert_on_hover(widget: tk.Widget):
-    fg = widget.cget('fg')
-    bg = widget.cget('bg')
-
-    widget.bind('<Enter>', lambda e: widget.configure(fg=bg, bg=fg))
-    widget.bind('<Leave>', lambda e: widget.configure(fg=fg, bg=bg))
-
-
-def unbind_invert(widget: tk.Widget):
-    widget.bind('<Enter>', lambda e: None)
-    widget.bind('<Leave>', lambda e: None)
-
-
-def bind_hover(widget: tk.Widget, **kw):
-    fg = widget.cget('fg')
-    bg = widget.cget('bg')
-
-    widget.bind('<Enter>', lambda e: widget.configure(**kw))
-    widget.bind('<Leave>', lambda e: widget.configure(fg=fg, bg=bg))
-
-
-def load_quest_image(img_index, height=None, width=None, resize=1.0):
-    path = f'imgs\\quests\\{int(img_index):03d}.png'
-    img = Image.open(path)
-
-    if height:
-        ratio = img.height / (height*resize)
-    elif width:
-        ratio = img.width / (width*resize)
-    else:
-        return img
-    new_dimensions = int(img.width // ratio), int(img.height // ratio)
-    return img.resize(new_dimensions)
-
-
-def load_icon_image(img_index, height=None, width=None, resize=1.0):
-    img_index = 35 if not img_index else img_index
-    path = f'imgs\\icons\\{int(img_index):03d}.png'
-    img = Image.open(path)
-
-    if height:
-        ratio = img.height / (height*resize)
-    elif width:
-        ratio = img.width / (width*resize)
-    else:
-        return img
-    new_dimensions = int(img.width // ratio), int(img.height // ratio)
-    return img.resize(new_dimensions)
-
-
-def get_img_color_avg(img):
-    sum_r, sum_b, sum_g = 0, 0, 0
-    count = 0
-    for r, g, b in img.getdata():
-        sum_r += r
-        sum_g += g
-        sum_b += b
-        count += 1
-
-    sum_r //= count
-    sum_g //= count
-    sum_b //= count
-
-    return f'#{hex(sum_r*255*255 + sum_g*255 + sum_b)[2:]:0>6}'
-
-
-def get_most_common_color(img, border_width=1):
-    colors = {}
-    color = 0
-    width = img.width
-    height = img.height
-    for n, pixels in enumerate(img.getdata()):
-        x, y = n % width, n // height
-        if y < border_width or y >= width - border_width or x < border_width or x >= height - border_width:
-            r, g, b = pixels
-            c = r*256*256 + g*256 + b
-            try:
-                colors[c] += 1
-            except KeyError:
-                colors.update({c: 1})
-
-    for c in sorted(colors.items(), key=lambda i: i[1], reverse=True):
-        color = c[0]
-
-        return f'#{hex(color)[2:]:0>6}'
 
 
 class Button(tk.Button):
@@ -351,7 +265,7 @@ class MainGUI(tk.Tk):
             treeview.insert('', 'end', qid, values=(name, f'+{points}'), tags=('normal',))
 
     def populate_buttons_frame(self):
-        buttons = [['Ponteiros', 'call_pointers'], ['Começar', 'call_start'],]
+        buttons = [['Ponteiros', 'call_pointers'], ['Histórico', 'call_history'], ['Começar', 'call_start'],]
         for text, command in buttons:
             button = Button(self.buttons_frame, text=text, command=getattr(self, command, None),
                             font=FONT + '-size 18')
@@ -682,6 +596,10 @@ class MainGUI(tk.Tk):
     def call_pointers(self):
         import pointers_GUI
         pointers_GUI.ConfigGUI(self)
+
+    def call_history(self):
+        from hisory_gui import ChooseGUI
+        ChooseGUI(self)
 
 
 if __name__ == '__main__':
