@@ -1,26 +1,4 @@
-from PIL import Image, ImageTk
-import tkinter as tk
-
-
-def invert_on_hover(widget: tk.Widget):
-    fg = widget.cget('fg')
-    bg = widget.cget('bg')
-
-    widget.bind('<Enter>', lambda e: widget.configure(fg=bg, bg=fg))
-    widget.bind('<Leave>', lambda e: widget.configure(fg=fg, bg=bg))
-
-
-def unbind_invert(widget: tk.Widget):
-    widget.bind('<Enter>', lambda e: None)
-    widget.bind('<Leave>', lambda e: None)
-
-
-def bind_hover(widget: tk.Widget, **kw):
-    fg = widget.cget('fg')
-    bg = widget.cget('bg')
-
-    widget.bind('<Enter>', lambda e: widget.configure(**kw))
-    widget.bind('<Leave>', lambda e: widget.configure(fg=fg, bg=bg))
+from PIL import Image
 
 
 def load_quest_image(img_index, height=None, width=None, resize=1.0):

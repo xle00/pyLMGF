@@ -4,8 +4,8 @@ from tkinter import ttk
 import random
 import datetime
 from databases import QuestDB, HistoryDB
-from PIL import ImageTk, Image
-from functions import load_icon_image, load_quest_image, invert_on_hover
+from PIL import ImageTk
+from functions import load_icon_image, load_quest_image
 
 
 db = QuestDB()
