@@ -3,13 +3,15 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import ImageTk
 
-from databases import QuestDB, Pointers
-from functions import *
-from cwidgets import *
+from databases import QuestDB, Pointers, LocalDB
+import functions as funcs
+import cwidgets as cw
+
 
 db = QuestDB()
 pointers = Pointers()
-
+loc = LocalDB().get_main_localization(funcs.get_system_language())
+print(loc)
 
 FONT = '-family Gadugi -weight bold '
 YELLOW = '#f7e083'
@@ -28,17 +30,17 @@ class MainGUI(tk.Tk):
         self.geometry(f'{self.width}x{self.height}+{width//4}+{height//4}')
         self.minsize(850, 550)
 
-        CustomStyle(self)
+        cw.CustomStyle(self)
 
         self.last_button = None
         self.tab_button_font = ['Gadugi', 12, 'normal']
 
         self.icon_column_width = 70
-        self.main_treeview = TreeView(None)
+        self.main_treeview = cw.TreeView(None)
         self.main_scrollbar = ttk.Scrollbar(None)
         self.focused_item = None
 
-        self.sel_treeview = TreeView(None)
+        self.sel_treeview = cw.TreeView(None)
         self.focused_sel = None
 
         self.tabs_frame = tk.Frame(bg='red')
@@ -81,7 +83,7 @@ class MainGUI(tk.Tk):
 
     def populate_tab_frame(self):
         for tab in db.get_categories():
-            button = Button(self.tabs_frame, text=tab, font=self.tab_button_font)
+            button = cw.Button(self.tabs_frame, text=tab, font=self.tab_button_font)
             button['command'] = lambda t=tab, b=button: self.tab_button_command(t, b)
             button.pack(side='left', fill='both', expand=1)
 
@@ -91,42 +93,42 @@ class MainGUI(tk.Tk):
 
         self.main_scrollbar = scrollbar = tk.Scrollbar(frame, orient='vertical',)
 
-        treeview = self.main_treeview = TreeView(frame, displaycolumns='#all', height=8, show='tree',
-                                                 yscrollcommand=scrollbar.set, style='treeview.Treeview')
+        treeview = self.main_treeview = cw.TreeView(frame, displaycolumns='#all', height=8, show='tree',
+                                                    yscrollcommand=scrollbar.set, style='treeview.Treeview')
         treeview['columns'] = ('Name', 'Points')
         treeview.pack(side='left', fill='both', expand=1)
 
         scrollbar['command'] = self.main_treeview.yview
 
-        button = Button(self.treeview_frame, text='Adicionar Missão', command=self.add_to_selected, fg=ADD_GREEN,
-                        height=10)
+        button = cw.Button(self.treeview_frame, text=loc['add_quest'], command=self.add_to_selected, fg=ADD_GREEN,
+                           height=10)
         button.place(relx=0, rely=.9, relwidth=1, relheight=.1)
 
         treeview.heading('#0', anchor='w', text='')
-        treeview.heading('Name', anchor='w', text='Missão')
-        treeview.heading('Points', anchor='w', text='Pontos')
+        treeview.heading('Name', anchor='w', text=loc['quest'])
+        treeview.heading('Points', anchor='w', text=loc['points'])
 
         treeview.column('#0', minwidth=self.icon_column_width, width=self.icon_column_width, stretch=0, anchor='w')
         treeview.column('Name', minwidth=700, width=700, stretch=0, anchor='w')
         treeview.column('Points', minwidth=112, width=112, stretch=0, anchor='w')
 
     def populate_sel_treeview_frame(self):
-        treeview = self.sel_treeview = TreeView(self.selected_quests_frame, style='sectreeview.Treeview',
-                                                height=6, show='tree', padding=(0,5,0))
+        treeview = self.sel_treeview = cw.TreeView(self.selected_quests_frame, style='sectreeview.Treeview',
+                                                   height=6, show='tree', padding=(0, 5, 0))
         treeview.configure(columns=('Name', 'Points'))
-        treeview.place(relx=0, rely=0, relheight=.85, relwidth=1)#.pack(fill='both', expand=1)
+        treeview.place(relx=0, rely=0, relheight=.85, relwidth=1)
 
         treeview.heading('#0', anchor='center', text='')
-        treeview.heading('Name', anchor='center', text='Missão')
-        treeview.heading('Points', anchor='center', text='Pontos')
+        treeview.heading('Name', anchor='center', text=loc['quest'])
+        treeview.heading('Points', anchor='center', text=loc['points'])
 
         treeview.column('#0', minwidth=0, width=0, stretch=0, anchor='center')
         treeview.column('Name', minwidth=380, width=380, stretch=0, anchor='center')
         treeview.column('Points', minwidth=70, width=70, stretch=0, anchor='center')
 
-        button = Button(self.selected_quests_frame, text='Remover Missão', command=self.remove_from_selected,
-                        fg=REMOVE_RED)
-        button.place(relx=0, rely=.85, relheight=.15, relwidth=1)#pack(fill='both')
+        button = cw.Button(self.selected_quests_frame, text=loc['remove_quest'], command=self.remove_from_selected,
+                           fg=REMOVE_RED)
+        button.place(relx=0, rely=.85, relheight=.15, relwidth=1)
 
         treeview.tag_configure('normal', background='#262626', foreground='#d0d0d0')
 
@@ -135,39 +137,39 @@ class MainGUI(tk.Tk):
             treeview.insert('', 'end', qid, values=(name, f'+{points}'), tags=('normal',))
 
     def populate_buttons_frame(self):
-        buttons = [['Ponteiros', 'call_pointers'], ['Histórico', 'call_history'], ['Começar', 'call_start'],]
+        buttons = [[loc['pointers'], 'call_pointers'], [loc['history'], 'call_history'], [loc['start'], 'call_start']]
         for text, command in buttons:
-            button = Button(self.buttons_frame, text=text, command=getattr(self, command, None),
-                            font=FONT + '-size 18')
+            button = cw.Button(self.buttons_frame, text=text, command=getattr(self, command, None),
+                               font=FONT + '-size 18')
             button.pack(fill='both', expand=1)
 
     def populate_details_frame1(self):
-        name_label = Label(self.details_frame1, compound='top', wraplength=300, fg=YELLOW)
+        name_label = cw.Label(self.details_frame1, compound='top', wraplength=300, fg=YELLOW)
         name_label.pack(fill='both', expand=1)
 
-        points_label = Label(self.details_frame1, compound='left')
+        points_label = cw.Label(self.details_frame1, compound='left')
         points_label.pack(fill='both', expand=1)
 
-        req_label = Label(self.details_frame1, compound='left')
+        req_label = cw.Label(self.details_frame1, compound='left')
         req_label.pack(fill='both', expand=1)
 
-        time_label = Label(self.details_frame1, compound='left')
+        time_label = cw.Label(self.details_frame1, compound='left')
         time_label.pack(fill='both', expand=1)
 
     def populate_details_frame2(self):
-        name_label = Label(self.details_frame2, compound='left', wraplength=300, fg=YELLOW)
+        name_label = cw.Label(self.details_frame2, compound='left', wraplength=300, fg=YELLOW)
         name_label.pack(fill='both', expand=1)
 
         frame = tk.Frame(self.details_frame2)
         frame.pack(fill='both', expand=1)
 
-        points_label = Label(frame, compound='top')
+        points_label = cw.Label(frame, compound='top')
         points_label.pack(fill='both', expand=1, side='left')
 
-        req_label = Label(frame, compound='top')
+        req_label = cw.Label(frame, compound='top')
         req_label.pack(fill='both', expand=1, side='left')
 
-        time_label = Label(frame, compound='top')
+        time_label = cw.Label(frame, compound='top')
         time_label.pack(fill='both', expand=1, side='left')
 
     def populate_main_treeview(self, category):
@@ -176,16 +178,13 @@ class MainGUI(tk.Tk):
 
         self.main_treeview.loaded_imgs = {}
         img_height = 44
-        print()
         for quest_id, name, points, req, time, *_, selected, _, q_img, _ in quests:
-
-            print(quest_id == db.identify_quest(points, req, time, name))
             img_hash = f'{q_img}_{img_height}'
 
             if img_hash in self.main_treeview.loaded_imgs.keys():
                 img = self.main_treeview.loaded_imgs.get(img_hash)
             else:
-                img = load_quest_image(q_img, img_height)
+                img = funcs.load_quest_image(q_img, img_height)
                 img = ImageTk.PhotoImage(img)
                 self.main_treeview.loaded_imgs.update({img_hash: img})
 
@@ -239,14 +238,14 @@ class MainGUI(tk.Tk):
                 return
 
     def tab_button_command(self, tab, button):
-        unbind_invert(button)
+        cw.unbind_invert(button)
 
         if self.last_button:
             if button is self.last_button:
                 return
 
             self.last_button.configure(bg='#262626', fg=MAIN_FG)
-            bind_hover(self.last_button, bg='#565656')
+            cw.bind_hover(self.last_button, bg='#565656')
 
         button.configure(bg=MAIN_FG, fg='#262626')
         self.last_button = button
@@ -311,8 +310,8 @@ class MainGUI(tk.Tk):
         else:
             _, name, points, req, time, *_, quest_img, quest_icon = db.get_quest_by_id(_id)
 
-            img = load_quest_image(quest_img, resize=resize)
-            bg = get_most_common_color(img)
+            img = funcs.load_quest_image(quest_img, resize=resize)
+            bg = funcs.get_most_common_color(img)
             r, g, b = [int(x, 16) for x in (bg[1:3], bg[3:5], bg[5:])]
 
             while (r+g+b)//3 > 45:
@@ -322,9 +321,9 @@ class MainGUI(tk.Tk):
             bg = f'#{hex((int(r)*256*256 + int(g)*256 + int(b)))[2:]:0>6}'
 
             name_img = ImageTk.PhotoImage(img, 2)
-            points_img = ImageTk.PhotoImage(load_icon_image(66, height=40, resize=resize))
-            req_img = ImageTk.PhotoImage(load_icon_image(quest_icon, height=40, resize=resize))
-            time_img = ImageTk.PhotoImage(load_icon_image(11, height=40, resize=resize))
+            points_img = ImageTk.PhotoImage(funcs.load_icon_image(66, height=40, resize=resize))
+            req_img = ImageTk.PhotoImage(funcs.load_icon_image(quest_icon, height=40, resize=resize))
+            time_img = ImageTk.PhotoImage(funcs.load_icon_image(11, height=40, resize=resize))
 
             name_label.configure(image=name_img, text=name, bg=bg)
             name_label.image = name_img

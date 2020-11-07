@@ -1,4 +1,6 @@
 from PIL import Image
+import ctypes
+import locale
 
 
 def load_quest_image(img_index, height=None, width=None, resize=1.0):
@@ -65,3 +67,8 @@ def get_most_common_color(img, border_width=1):
         color = c[0]
 
         return f'#{hex(color)[2:]:0>6}'
+
+
+def get_system_language():
+    return locale.windows_locale[ctypes.windll.kernel32.GetUserDefaultUILanguage()].lower()
+

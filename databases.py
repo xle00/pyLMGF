@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import sqlite3
+from functions import get_system_language
 
 
 class QuestDB(sqlite3.Connection):
     def __init__(self):
         super(QuestDB, self).__init__('quests.db')
         self.cur = self.cursor()
+        self.lang = get_system_language()[:2]
 
     def set_selected(self, quest_id_list):
         subquery = f"({','.join(['?'] * len(quest_id_list))})"
@@ -18,17 +20,43 @@ class QuestDB(sqlite3.Connection):
             self.cur.execute(f'UPDATE quests2 SET selected = Null WHERE id IN {subquery}', quest_id_list)
 
     def get_quest_by_id(self, quest_id):
-        quest = self.cur.execute('SELECT * FROM quests2 WHERE id = ?', (quest_id,)).fetchone()
+        quest = list(self.cur.execute('SELECT * FROM quests2 WHERE id = ?', (quest_id,)).fetchone())
+        quest[1] = self.get_quest_name(quest[1])
         return quest
 
     def get_categories(self):
-        result = self.cur.execute('SELECT category FROM quests2').fetchall()
-        result = set(result)
+        try:
+            result = self.cur.execute(f'SELECT {self.lang} FROM categories').fetchall()
+        except sqlite3.OperationalError:
+            result = self.cur.execute(f'SELECT en FROM categories').fetchall()
         return sorted([r[0] for r in result], key=lambda i: i.lower())
 
     def get_quests_by_category(self, category):
-        result = self.cur.execute('SELECT * FROM quests2 where category = ? ORDER BY name', (category,)).fetchall()
-        return result
+        cat = self.get_category_id(category)
+        result = self.cur.execute('SELECT * FROM quests2 where category = ? ORDER BY name', (cat,)).fetchall()
+        # print(result)
+        new_result = []
+        for items in result:
+            items = list(items)
+            name = self.get_quest_name(items[1])
+            items[1] = name
+            new_result.append(items)
+        return new_result
+
+    def get_quest_name(self, nid):
+        try:
+            result = self.cur.execute(f'SELECT {self.lang} FROM quest_names WHERE id = ?', (nid,)).fetchone()
+        except sqlite3.OperationalError:
+            result = self.cur.execute(f'SELECT en FROM quest_names WHERE id = ?', (nid,)).fetchone()
+
+        return result[0]
+
+    def get_category_id(self, category):
+        try:
+            result = self.cur.execute(f'SELECT id FROM categories where {self.lang} = ?', (category,)).fetchone()
+        except sqlite3.OperationalError:
+            result = self.cur.execute(f'SELECT id FROM categories where en = ?', (category,)).fetchone()
+        return result[0]
 
     def get_selected_ids(self):
         result = self.cur.execute('SELECT id FROM quests2 WHERE selected = 1').fetchall()
@@ -50,7 +78,6 @@ class QuestDB(sqlite3.Connection):
             partial = self.cur.execute('SELECT name FROM ambigs WHERE id = ?', (ambid,)).fetchone()[0]
             if partial in name:
                 return qid
-
 
 
 class Pointers(sqlite3.Connection):
@@ -155,3 +182,16 @@ class HistoryDB(sqlite3.Connection):
         result = self.cur.execute('SELECT identifier FROM history WHERE sid = ? AND SLOT = ? ORDER BY rowid DESC',
                                   (sid, slot)).fetchone()
         return result
+
+
+class LocalDB(sqlite3.Connection):
+    def __init__(self):
+        super(LocalDB, self).__init__('localization.db')
+        self.cur = self.cursor()
+
+    def get_main_localization(self, locale):
+        try:
+            result = self.cur.execute(f'SELECT id, {locale} FROM main').fetchall()
+        except sqlite3.OperationalError:
+            result = self.cur.execute(f'SELECT id, en_us FROM main').fetchall()
+        return dict(i for i in result)
