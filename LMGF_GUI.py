@@ -11,15 +11,6 @@ import cwidgets as cw
 db = QuestDB()
 pointers = Pointers()
 loc = LocalDB().get_main_localization(funcs.get_system_language())
-print(loc)
-
-FONT = '-family Gadugi -weight bold '
-YELLOW = '#f7e083'
-MAIN_FG = '#efeee9'
-REMOVE_RED = '#e26161'
-ADD_GREEN = '#61e261'
-BUTTON_BG = '#091f26'
-font = 'Gadugi'
 
 
 class MainGUI(tk.Tk):
@@ -29,11 +20,11 @@ class MainGUI(tk.Tk):
         self.width, self.height = width//2, height//2
         self.geometry(f'{self.width}x{self.height}+{width//4}+{height//4}')
         self.minsize(850, 550)
+        self['bg'] = '#333333'
 
         cw.CustomStyle(self)
 
         self.last_button = None
-        self.tab_button_font = ['Gadugi', 12, 'normal']
 
         self.icon_column_width = 70
         self.main_treeview = cw.TreeView(None)
@@ -43,23 +34,31 @@ class MainGUI(tk.Tk):
         self.sel_treeview = cw.TreeView(None)
         self.focused_sel = None
 
-        self.tabs_frame = tk.Frame(bg='red')
-        self.tabs_frame.place(relx=0, rely=0, relwidth=1, relheight=0.03880597015)
+        spacing = 0.0025
+        cat_f = {'x': 0, 'y': 0, 'w': 1, 'h': 0.03880597015}
+        mtv_f = {'x': 0, 'y': cat_f['h'], 'w': 0.7438016529, 'h': 0.6119402985}
+        stv_f = {'x': 0, 'y': mtv_f['h'] + cat_f['h'], 'w': mtv_f['w']/2, 'h': 1 - mtv_f['h'] - cat_f['h']}
+        df1_f = {'x': mtv_f['w'], 'y': mtv_f['y'], 'w': 1-mtv_f['w'], 'h': mtv_f['h']}
+        df2_f = {'x': stv_f['w'], 'y': stv_f['y'], 'w': stv_f['w'], 'h': stv_f['h']}
+        but_f = {'x': df1_f['x'], 'y': df2_f['y'], 'w': df1_f['w'], 'h': df2_f['h']}
 
-        self.treeview_frame = tk.Frame(bg='yellow')
-        self.treeview_frame.place(relx=0, rely=0.03880597015, relwidth=0.7438016529, relheight=0.6119402985)
+        self.cat_frame = tk.Frame(self, bg='#777777')
+        self.cat_frame.place(relx=cat_f['x'], rely=cat_f['y'], relwidth=cat_f['w'], relheight=cat_f['h'])
 
-        self.selected_quests_frame = tk.Frame(bg='blue')
-        self.selected_quests_frame.place(relx=0, rely=0.6507462687, relwidth=0.3719008264, relheight=0.3492537313)
+        self.treeview_frame = tk.Frame(self, bg='yellow')
+        self.treeview_frame.place(relx=mtv_f['x'], rely=mtv_f['y'], relwidth=mtv_f['w'], relheight=mtv_f['h']-spacing)
 
-        self.details_frame2 = tk.Frame(bg='purple')
-        self.details_frame2.place(relx=0.3719008264, rely=0.6507462687, relwidth=0.3719008264, relheight=0.3492537313)
+        self.selected_quests_frame = tk.Frame(self, bg='blue')
+        self.selected_quests_frame.place(relx=stv_f['x'], rely=stv_f['y'], relwidth=stv_f['w'], relheight=stv_f['h'])
 
-        self.buttons_frame = tk.Frame(bg='orange')
-        self.buttons_frame.place(relx=0.7438016529, rely=0.6507462687, relwidth=0.2561983471, relheight=0.3492537313)
+        self.details_frame2 = tk.Frame(self, bg='purple')
+        self.details_frame2.place(relx=df2_f['x'], rely=df2_f['y'], relwidth=df2_f['w']-spacing/2, relheight=df2_f['h'])
 
-        self.details_frame1 = tk.Frame(bg='cyan')
-        self.details_frame1.place(relx=0.7438016529, rely=0.03880597015, relwidth=0.2561983471, relheight=0.6119402985)
+        self.buttons_frame = tk.Frame(self, bg='orange')
+        self.buttons_frame.place(relx=but_f['x'], rely=but_f['y'], relwidth=but_f['w'], relheight=but_f['h'])
+
+        self.details_frame1 = tk.Frame(self, bg='cyan')
+        self.details_frame1.place(relx=df1_f['x'], rely=df1_f['y'], relwidth=df1_f['w'], relheight=df1_f['h']-spacing)
 
         self.populate_tab_frame()
         self.populate_treeview_frame()
@@ -69,23 +68,136 @@ class MainGUI(tk.Tk):
         self.populate_details_frame2()
         self.change_listener()
 
-        self.main_treeview.bind('<Return>', lambda e:  self.add_to_selected())
-        self.main_treeview.bind('<space>', lambda e: self.add_to_selected())
-        self.main_treeview.bind('<Double-Button-1>', lambda e: self.add_to_selected())
-        self.main_treeview.bind('<B1-Motion>', lambda e, t=self.main_treeview: self.dragging(e, t))
-        self.sel_treeview.bind('<Double-Button-3>', lambda e: 1)
-
-        self.sel_treeview.bind('<B1-Motion>', lambda e, t=self.sel_treeview: self.dragging(e, t))
-        self.sel_treeview.bind('<Delete>', lambda e: self.remove_from_selected())
+        self.last_item = None
+        self.bind_events()
 
         self.bind('<Configure>', lambda e: self.readjust(e))
         self.readjust()
 
+    def bind_events(self):
+        ms = 10
+
+        def release():
+            self.main_treeview.selection_remove(*self.main_treeview.get_children())
+            self.main_treeview.focus('')
+
+        def mouse_wrapper(func):
+            def inner(event):
+                widget = event.widget
+                x, y = event.x, event.y
+                item = widget.identify_row(y)
+                return func(widget, item)
+            return inner
+
+        @mouse_wrapper
+        def left_click(widget, item):
+            if not item.isdecimal():
+                if widget.item(item)['open']:
+                    widget.item(item, open=0)
+                else:
+                    widget.item(item, open=1)
+
+            if self.group:
+                self.after(ms, release)
+
+        @mouse_wrapper
+        def right_click(widget, item):
+            if item.isdecimal():
+                widget.selection_remove(item)
+
+        @mouse_wrapper
+        def left_drag(widget, item):
+            widget.selection_set(item)
+            widget.focus(item)
+
+        @mouse_wrapper
+        def right_drag(widget, item):
+            if item in widget.selection():
+                widget.selection_remove(item)
+                widget.focus(item)
+            if self.group:
+                self.after(ms, release)
+
+        @mouse_wrapper
+        def middle_drag(widget, item):
+            if item not in widget.selection():
+                widget.selection_add(item)
+                widget.focus(item)
+            if self.group:
+                self.after(ms, release)
+
+        @mouse_wrapper
+        def double_left(widget, item):
+            if widget is self.main_treeview:
+                if item in self.sel_treeview.get_children():
+                    self.remove_from_selected([item])
+                else:
+                    if item.isdecimal():
+                        self.add_to_selected()
+            elif widget is self.sel_treeview:
+                self.remove_from_selected()
+
+        def keyboard_wrapper(func):
+            def inner(event):
+                widget = event.widget
+                return func(widget)
+            return inner
+
+        @keyboard_wrapper
+        def add(widget):
+            self.add_to_selected()
+
+        @keyboard_wrapper
+        def remove_from_main(widget):
+            self.remove_from_selected(widget.selection())
+
+        @keyboard_wrapper
+        def remove(widget):
+            self.remove_from_selected()
+
+        @keyboard_wrapper
+        def select_all(widget):
+            widget.selection_set(*widget.get_children())
+
+        @keyboard_wrapper
+        def deselect_all(widget):
+            widget.selection_remove(*widget.get_children())
+
+        self.main_treeview.bind('<Button-1>', left_click)
+        self.main_treeview.bind('<Button-2>', left_click)
+        self.main_treeview.bind('<Button-3>', right_click)
+        self.main_treeview.bind('<B1-Motion>', left_drag)
+        self.main_treeview.bind('<B2-Motion>', middle_drag)
+        self.main_treeview.bind('<B3-Motion>', right_drag)
+        self.main_treeview.bind('<Double-Button-1>', double_left)
+        self.main_treeview.bind('<space>', add)
+        self.main_treeview.bind('<Return>', add)
+        self.main_treeview.bind('<Delete>', remove_from_main)
+        self.main_treeview.bind('<Escape>', deselect_all)
+        self.main_treeview.bind('<Control-a>', select_all)
+        self.main_treeview.bind('<Control-A>', select_all)
+        self.main_treeview.bind('<Control-d>', deselect_all)
+        self.main_treeview.bind('<Control-D>', deselect_all)
+
+        self.sel_treeview.bind('<Button-3>', right_click)
+        self.sel_treeview.bind('<B1-Motion>', left_drag)
+        self.sel_treeview.bind('<B2-Motion>', middle_drag)
+        self.sel_treeview.bind('<B3-Motion>', right_drag)
+        self.sel_treeview.bind('<Double-Button-1>', double_left)
+        self.sel_treeview.bind('<Delete>', remove)
+        self.sel_treeview.bind('<space>', remove)
+        self.sel_treeview.bind('<Return>', remove)
+        self.sel_treeview.bind('<Escape>', deselect_all)
+        self.sel_treeview.bind('<Control-a>', select_all)
+        self.sel_treeview.bind('<Control-A>', select_all)
+        self.sel_treeview.bind('<Control-d>', deselect_all)
+        self.sel_treeview.bind('<Control-D>', deselect_all)
+
     def populate_tab_frame(self):
         for tab in db.get_categories():
-            button = cw.Button(self.tabs_frame, text=tab, font=self.tab_button_font)
+            button = cw.Button(self.cat_frame, text=tab, font=(cw.font, 12, 'normal'))
             button['command'] = lambda t=tab, b=button: self.tab_button_command(t, b)
-            button.pack(side='left', fill='both', expand=1)
+            button.pack(side='left', fill='both', expand=1, pady=(0, 2))
 
     def populate_treeview_frame(self):
         frame = tk.Frame(self.treeview_frame, bg='#262626')
@@ -94,14 +206,15 @@ class MainGUI(tk.Tk):
         self.main_scrollbar = scrollbar = tk.Scrollbar(frame, orient='vertical',)
 
         treeview = self.main_treeview = cw.TreeView(frame, displaycolumns='#all', height=8, show='tree',
-                                                    yscrollcommand=scrollbar.set, style='treeview.Treeview')
+                                                    yscrollcommand=scrollbar.set, style='treeview.Treeview',
+                                                    padding=10)
         treeview['columns'] = ('Name', 'Points')
         treeview.pack(side='left', fill='both', expand=1)
 
         scrollbar['command'] = self.main_treeview.yview
 
-        button = cw.Button(self.treeview_frame, text=loc['add_quest'], command=self.add_to_selected, fg=ADD_GREEN,
-                           height=10)
+        button = cw.Button(self.treeview_frame, text=loc['add_quest'], command=self.add_to_selected, fg=cw.ADD_GREEN,
+                           bg='#1d2d2a', relief='flat', font=(cw.font, 13, 'bold'))
         button.place(relx=0, rely=.9, relwidth=1, relheight=.1)
 
         treeview.heading('#0', anchor='w', text='')
@@ -109,42 +222,52 @@ class MainGUI(tk.Tk):
         treeview.heading('Points', anchor='w', text=loc['points'])
 
         treeview.column('#0', minwidth=self.icon_column_width, width=self.icon_column_width, stretch=0, anchor='w')
-        treeview.column('Name', minwidth=700, width=700, stretch=0, anchor='w')
-        treeview.column('Points', minwidth=112, width=112, stretch=0, anchor='w')
+        treeview.column('Name', minwidth=700, width=700, stretch=1, anchor='w')
+        treeview.column('Points', minwidth=112, width=112, stretch=1, anchor='w')
+
+        treeview.tag_configure('normal', background=cw.TV_BG, foreground='#d0d0d0', font=('Gadugi', 14, 'normal'))
+        treeview.tag_configure('selected', background='#d1ae62', foreground='#262626', font=('Gadugi', 14, 'bold'))
+        treeview.tag_configure('parent', background='#d6598a', foreground='#262626', font=('Gadugi', 15, 'bold',))
 
     def populate_sel_treeview_frame(self):
-        treeview = self.sel_treeview = cw.TreeView(self.selected_quests_frame, style='sectreeview.Treeview',
-                                                   height=6, show='tree', padding=(0, 5, 0))
+        frame = tk.Frame(self.selected_quests_frame, bg='#262626')
+        frame.place(relx=0, rely=0, relwidth=1, relheight=.85)
+
+        treeview = self.sel_treeview = cw.TreeView(frame, style='sectreeview.Treeview',
+                                                   height=6, padding=(0, 5, 0))
         treeview.configure(columns=('Name', 'Points'))
-        treeview.place(relx=0, rely=0, relheight=.85, relwidth=1)
+        treeview.pack(side='left', fill='both', expand=1)
 
         treeview.heading('#0', anchor='center', text='')
         treeview.heading('Name', anchor='center', text=loc['quest'])
         treeview.heading('Points', anchor='center', text=loc['points'])
 
         treeview.column('#0', minwidth=0, width=0, stretch=0, anchor='center')
-        treeview.column('Name', minwidth=380, width=380, stretch=0, anchor='center')
-        treeview.column('Points', minwidth=70, width=70, stretch=0, anchor='center')
+        treeview.column('Name', minwidth=380, width=380, stretch=1, anchor='center')
+        treeview.column('Points', minwidth=70, width=70, stretch=1, anchor='center')
 
         button = cw.Button(self.selected_quests_frame, text=loc['remove_quest'], command=self.remove_from_selected,
-                           fg=REMOVE_RED)
+                           fg=cw.REMOVE_RED, bg='#2d2121')
         button.place(relx=0, rely=.85, relheight=.15, relwidth=1)
 
-        treeview.tag_configure('normal', background='#262626', foreground='#d0d0d0')
+        treeview.tag_configure('normal', background='#222222', foreground='#d0d0d0')
 
         for qid in db.get_selected_ids():
             _, name, points, *_ = db.get_quest_by_id(qid)
             treeview.insert('', 'end', qid, values=(name, f'+{points}'), tags=('normal',))
 
+        self.update_sel_headings()
+
     def populate_buttons_frame(self):
         buttons = [[loc['pointers'], 'call_pointers'], [loc['history'], 'call_history'], [loc['start'], 'call_start']]
         for text, command in buttons:
             button = cw.Button(self.buttons_frame, text=text, command=getattr(self, command, None),
-                               font=FONT + '-size 18')
+                               # font=FONT + '-size 18',
+                               bg='#262626')
             button.pack(fill='both', expand=1)
 
     def populate_details_frame1(self):
-        name_label = cw.Label(self.details_frame1, compound='top', wraplength=300, fg=YELLOW)
+        name_label = cw.Label(self.details_frame1, compound='top', wraplength=300, fg=cw.YELLOW)
         name_label.pack(fill='both', expand=1)
 
         points_label = cw.Label(self.details_frame1, compound='left')
@@ -157,7 +280,7 @@ class MainGUI(tk.Tk):
         time_label.pack(fill='both', expand=1)
 
     def populate_details_frame2(self):
-        name_label = cw.Label(self.details_frame2, compound='left', wraplength=300, fg=YELLOW)
+        name_label = cw.Label(self.details_frame2, compound='left', wraplength=300, fg=cw.YELLOW)
         name_label.pack(fill='both', expand=1)
 
         frame = tk.Frame(self.details_frame2)
@@ -173,11 +296,16 @@ class MainGUI(tk.Tk):
         time_label.pack(fill='both', expand=1, side='left')
 
     def populate_main_treeview(self, category):
+        self.group = group = 0
+
         self.main_treeview.delete(*self.main_treeview.get_children())
         quests = db.get_quests_by_category(category)
 
+        names = []
+
         self.main_treeview.loaded_imgs = {}
         img_height = 44
+
         for quest_id, name, points, req, time, *_, selected, _, q_img, _ in quests:
             img_hash = f'{q_img}_{img_height}'
 
@@ -190,14 +318,23 @@ class MainGUI(tk.Tk):
 
             tags = ('selected',) if selected else ('normal',)
 
-            self.main_treeview.insert('', 'end', iid=quest_id, values=(name, f'+{points}'), image=img, tags=tags)
-            self.main_treeview.tag_configure('normal', background='#262626', foreground='#d0d0d0', )
-            self.main_treeview.tag_configure('selected', background='#d1ae62', foreground='#262626', )
+            if group:
+                nameid = name.split(':')[0] if ':' in name else name
+
+                if nameid not in names:
+                    self.main_treeview.insert('', 'end', nameid, values=(nameid,), image=img, tags='parent')
+                    names.append(nameid)
+
+                self.main_treeview.insert(nameid, 'end', iid=quest_id, values=(name, f'+{points}'), tags=tags)
+            else:
+                self.main_treeview.insert('', 'end', iid=quest_id, values=(name, f'+{points}'), image=img,
+                                          tags=tags)
 
         self.resize_main_treeview()
 
     def add_to_selected(self):
         selected = self.get_selected_from_main()
+        # print(selected)
         if not selected:
             return
         db.set_selected([d['Id'] for d in selected])
@@ -209,33 +346,44 @@ class MainGUI(tk.Tk):
             if iid not in self.sel_treeview.get_children():
                 self.sel_treeview.insert('', 'end', iid=iid, values=(name, points), tags=('normal',))
 
-        # refresh main treeview to update selected colors
-        q_id = self.main_treeview.selection()
-        self.populate_main_treeview(self.last_button.cget('text'))
-        self.main_treeview.selection_set(*q_id)
-        self.main_treeview.focus(q_id[-1])
+        # update selected colors
+        for qid in self.main_treeview.selection():
+            if qid.isdecimal():
+                self.main_treeview.item(qid, tags=('selected',))
+
+        self.update_sel_headings()
 
     def remove_from_selected(self, qid=None):
         if qid:
-            selected = ''
+            selected = [q for q in qid if q in self.sel_treeview.get_children()]
         else:
             selected = self.sel_treeview.selection()
             if not selected:
                 return
 
-            # delete from rows from treeview and set quests unselected
-            self.sel_treeview.delete(*selected)
-            db.set_unselected(selected)
+        # delete from rows from treeview and set quests unselected
+        self.sel_treeview.delete(*selected)
+        db.set_unselected(selected)
 
-            # refresh main treeview to update selected colors
-            q_id = self.main_treeview.selection()
-            if self.last_button:
-                self.populate_main_treeview(self.last_button.cget('text'))
-            self.main_treeview.selection_set(*q_id)
-            try:
-                self.main_treeview.focus(q_id[-1])
-            except IndexError:
-                return
+        # update selected colors
+        if not self.group:
+            [self.main_treeview.item(qid, tags=('selected',)) if qid in self.sel_treeview.get_children() else
+                self.main_treeview.item(qid, tags=('normal',)) for qid in self.main_treeview.get_children()]
+        else:
+            [self.main_treeview.item(qid, tags=('selected',)) if qid in self.sel_treeview.get_children() else
+                self.main_treeview.item(qid, tags=('normal',))
+                for parent in self.main_treeview.get_children() for qid in self.main_treeview.get_children(parent)]
+
+        self.update_sel_headings()
+
+    def update_sel_headings(self):
+        lenght = len(self.sel_treeview.get_children())
+        name_text = f'{lenght} {loc["quest"]}' if lenght == 1 else f'{lenght} {loc["quests"]}'
+        points = [int(self.sel_treeview.item(item)['values'][1]) for item in self.sel_treeview.get_children()]
+        points_text = f'~{sum(points) // len(points)}' if len(points) else ''
+
+        self.sel_treeview.heading('Name', text=name_text)
+        self.sel_treeview.heading('Points', text=points_text)
 
     def tab_button_command(self, tab, button):
         cw.unbind_invert(button)
@@ -244,40 +392,43 @@ class MainGUI(tk.Tk):
             if button is self.last_button:
                 return
 
-            self.last_button.configure(bg='#262626', fg=MAIN_FG)
-            cw.bind_hover(self.last_button, bg='#565656')
+            self.last_button.configure(bg=cw.BUTTON_BG, fg=cw.MAIN_FG)
+            cw.bind_hover(self.last_button, bg=cw.BUTTON_BG_HOVER)
 
-        button.configure(bg=MAIN_FG, fg='#262626')
+        button.configure(bg=cw.MAIN_FG, fg=cw.BUTTON_BG)
         self.last_button = button
 
         self.resize_tab_buttons(self.width)
 
         self.populate_main_treeview(tab)
+        self.main_treeview.yview_moveto(0.0)
 
     def get_selected_from_main(self):
         tv = self.main_treeview
         selected = []
         for i in tv.selection():
-            d = tv.set(i)
-            d.update({'Id': i})
-            selected.append(d)
+            print(i, i.isdecimal())
+            if i.isdecimal():
+                d = tv.set(i)
+                d.update({'Id': i})
+                selected.append(d)
         return selected
 
     def change_listener(self):
-        q_id = self.main_treeview.selection()
-        q_id = q_id[-1] if q_id else ''
+        qid = [i for i in self.main_treeview.selection() if i.isdecimal()]
+        qid = qid[-1] if qid else ''
 
-        if q_id != self.focused_item:
-            self.focused_item = q_id
+        if qid != self.focused_item:
+            self.focused_item = qid
             self.refresh_details('main')
 
         '-------------------------------------------------------------------------------------------------------------'
 
-        q_id = self.sel_treeview.selection()
-        q_id = q_id[-1] if q_id else ''
+        qid = self.sel_treeview.selection()
+        qid = qid[-1] if qid else ''
 
-        if q_id != self.focused_sel:
-            self.focused_sel = q_id
+        if qid != self.focused_sel:
+            self.focused_sel = qid
             self.refresh_details('sel')
 
         self.after(100, self.change_listener)
@@ -287,25 +438,27 @@ class MainGUI(tk.Tk):
             name_label, points_label, req_label, time_label = self.details_frame1.children.values()
             _id = self.focused_item
             spacer = ' '
+            bg = '#212121'
         elif which == 'sel':
             name_label, frame = self.details_frame2.children.values()
             points_label, req_label, time_label = frame.children.values()
             _id = self.focused_sel
             spacer = ''
+            bg = '#212121'
         else:
             return
 
         if not _id:
-            name_label.configure(image=None, text='', bg='#232323')
+            name_label.configure(image=None, text='', bg=bg)
             name_label.image = None
 
-            points_label.configure(image=None, text='', bg='#232323')
+            points_label.configure(image=None, text='', bg=bg)
             points_label.image = None
 
-            req_label.configure(image=None, text='', bg='#232323')
+            req_label.configure(image=None, text='', bg=bg)
             req_label.image = None
 
-            time_label.configure(image=None, text='', bg='#232323')
+            time_label.configure(image=None, text='', bg=bg)
             time_label.image = None
         else:
             _, name, points, req, time, *_, quest_img, quest_icon = db.get_quest_by_id(_id)
@@ -337,12 +490,6 @@ class MainGUI(tk.Tk):
             time_label.configure(image=time_img, text=f'{spacer}{time}', bg=bg)
             time_label.image = time_img
 
-    @staticmethod
-    def dragging(event, treeview):
-        rowid = treeview.identify_row(event.y)
-        treeview.selection_set(rowid)
-        treeview.focus(rowid)
-
     def readjust(self, event=None):
         if event is None:
             pass
@@ -372,23 +519,31 @@ class MainGUI(tk.Tk):
         return int(width), int(height)
 
     def resize_tab_buttons(self, width):
-        sizes = ([1600, 13], [1500, 12], [1400, 11], [1300, 10], [1150, 9], [1050, 8], [1000, 7])
-        buttons = self.tabs_frame.children.values()
+        sizes = ([1700, 14], [1600, 13], [1500, 12], [1400, 11], [1300, 10], [1150, 9], [1050, 8], [1000, 7])
+        buttons = self.cat_frame.children.values()
 
         for w, size in sizes[::-1]:
             if w >= width:
                 for button in buttons:
                     if button is self.last_button:
-                        button.configure(font=(font, size, 'bold'))
+                        button.configure(font=(cw.font, size, 'bold'))
                     else:
-                        button.configure(font=(font, size, 'normal'))
+                        button.configure(font=(cw.font, size, 'normal'))
+                break
+        for w, size in sizes[::-1]:
+            if w >= width:
+                for button in buttons:
+                    if button is self.last_button:
+                        button.configure(font=(cw.font, size, 'bold'))
+                    else:
+                        button.configure(font=(cw.font, size, 'normal'))
                 break
         else:
             for button in buttons:
                 if button is self.last_button:
-                    button.configure(font=(font, sizes[0][1], 'bold'))
+                    button.configure(font=(cw.font, sizes[0][1], 'bold'))
                 else:
-                    button.configure(font=(font, sizes[0][1], 'normal'))
+                    button.configure(font=(cw.font, sizes[0][1], 'normal'))
 
     def resize_main_treeview(self):
         button = [widget for widget in self.treeview_frame.children.values() if isinstance(widget, tk.Button)][0]
@@ -444,7 +599,10 @@ class MainGUI(tk.Tk):
 
     def resize_details2(self):
         name, frame = self.details_frame2.children.values()
-        name.configure(wraplength=name.winfo_width()-120-10)
+        if not name.cget('text'):
+            return
+        name.configure(wraplength=name.winfo_width() - 120 - 10)
+
         children = [name] + list(frame.children.values())
 
         if frame.winfo_height() < frame.winfo_reqheight():

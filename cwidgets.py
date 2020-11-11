@@ -4,10 +4,13 @@ from tkinter import ttk
 FONT = '-family Gadugi -weight bold '
 YELLOW = '#f7e083'
 MAIN_FG = '#efeee9'
-REMOVE_RED = '#e26161'
-ADD_GREEN = '#61e261'
-BUTTON_BG = '#091f26'
-font = 'Gadugi'
+REMOVE_RED = '#d3a9a9'
+ADD_GREEN = '#bcd1c9'#'#87dbac'#'#87db87'
+SELECTED_YELLOW = '#d1ae62'
+BUTTON_BG = '#323536'
+BUTTON_BG_HOVER = '#464646'
+font = 'Segoe UI'
+TV_BG = '#222222'
 
 
 def invert_on_hover(widget: tk.Widget):
@@ -35,7 +38,7 @@ class Button(tk.Button):
     def __init__(self, parent, **kw):
         super(Button, self).__init__(parent)
         self.configure(
-            bg='#262626',
+            bg=BUTTON_BG,
             fg=MAIN_FG,
             relief='flat',
             font=FONT + '-weight bold ',
@@ -43,7 +46,17 @@ class Button(tk.Button):
             cursor='hand2',
         )
         self.config(**kw)
-        bind_hover(self, bg='#565656')
+        self.config(
+            activebackground=self.cget('fg'),
+            activeforeground=self.cget('bg')
+        )
+
+        multiplier = 1.75
+        bghex = self.cget('bg').replace('#', '')
+        r, g, b = int(bghex[:2], 16)*multiplier, int(bghex[2:4], 16)*multiplier, int(bghex[4:], 16)*multiplier
+        hover_rgb = f'#{bytearray([int(r), int(g), int(b)]).hex()}'
+
+        bind_hover(self, bg=hover_rgb)
 
 
 class TreeView(ttk.Treeview):
@@ -90,9 +103,9 @@ class CustomStyle(ttk.Style):
         self.configure("treeview.Treeview",
                        highlightthickness=0,
                        bd=0,
-                       font=('Gadugi', 14),
+                       font=(font, 14),
                        rowheight=45,
-                       background='#262626',
+                       background=TV_BG,
                        )
 
         # layout
@@ -101,7 +114,7 @@ class CustomStyle(ttk.Style):
 
         # map
         self.map('treeview.Treeview',
-                 background=[('disabled', '#262626'), ('selected', MAIN_FG)],
+                 background=[('disabled', '#262626'), ('selected', ADD_GREEN)],
                  foreground=[('disabled', MAIN_FG), ('selected', '#262626')],
                  relief=[('selected', 'flat')]
                  )
@@ -112,29 +125,30 @@ class CustomStyle(ttk.Style):
         self.layout("sectreeview.Treeview.Heading",
                     [("Custom2.Treeheading.cell", {'sticky': 'nsew'}),
                      ("Custom2.Treeheading.border", {'sticky': 'nswe', 'children':
-                         [("Custom2.Treeheading.padding", {'sticky': 'nswe', 'children':
-                             [("Custom2.Treeheading.image", {'side': 'right','sticky': ''}),
-                              ("Custom2.Treeheading.text", {'sticky': 'we'})]})]}),])
+                        [("Custom2.Treeheading.padding", {'sticky': 'nswe', 'children':
+                            [("Custom2.Treeheading.image", {'side': 'right', 'sticky': ''}),
+                                ("Custom2.Treeheading.text", {'sticky': 'we'})]})]}), ])
 
         # heading style
         self.configure("sectreeview.Treeview.Heading",
-                       font=('Gadugi', 12, 'bold'),
-                       background='black',
-                       foreground='white'
+                       font=('Gadugi', 14, 'bold'),
+                       background='#262626',
+                       foreground='#d0d0d0'
                        )
 
         # heading map
         self.map("sectreeview.Treeview.Heading",
-                 relief=[('active', 'groove'), ('pressed', 'sunken')],
-                 background=[('active', 'white')],
-                 foreground=[('active', 'black')])
+                 relief=[('active', 'flat'), ('pressed', 'sunken')],
+                 # background=[('active', 'white')],
+                 # foreground=[('active', 'black')])
+                 )
 
         # style
         self.configure("sectreeview.Treeview",
                        highlightthickness=0,
                        bd=0,
                        font=('Gadugi', 10),
-                       background='#292929',
+                       background='#222222',
                        rowheight=25
                        )
 
@@ -142,11 +156,9 @@ class CustomStyle(ttk.Style):
         self.layout("sectreeview.Treeview", [
             ('sectreeview.Treeview.treearea', {'sticky': 'news'})])
 
-        print(self.map('Treeview'))
-
         # map
         self.map('sectreeview.Treeview',
-                 background=[('disabled', '#262626'), ('selected', MAIN_FG)],
+                 background=[('disabled', '#262626'), ('selected', REMOVE_RED)],
                  foreground=[('disabled', MAIN_FG), ('selected', '#262626')],
                  )
 
@@ -157,6 +169,6 @@ class Label(tk.Label):
         self.configure(
             bg='pink',
             fg=MAIN_FG,
-            font=FONT+' -size 16',
+            font=(font, 16, 'bold'),
         )
         self.config(**kw)
