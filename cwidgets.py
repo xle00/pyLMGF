@@ -3,7 +3,8 @@ from tkinter import ttk
 
 FONT = '-family Gadugi -weight bold '
 YELLOW = '#f7e083'
-MAIN_FG = '#efeee9'
+# MAIN_FG = '#efeee9'
+MAIN_FG = '#e7e2d6'
 REMOVE_RED = '#d3a9a9'
 ADD_GREEN = '#bcd1c9'#'#87dbac'#'#87db87'
 SELECTED_YELLOW = '#d1ae62'

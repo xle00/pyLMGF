@@ -2,12 +2,19 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import ImageTk
+import json
 
 from databases import QuestDB, Pointers, LocalDB
 import functions as funcs
 import cwidgets as cw
 
 
+def load_configs():
+    with open('configs.json', 'r') as f:
+        return json.loads(f.read())
+
+
+configs = load_configs()
 db = QuestDB()
 pointers = Pointers()
 loc = LocalDB().get_main_localization(funcs.get_system_language())
@@ -19,8 +26,9 @@ class MainGUI(tk.Tk):
         width, height = self.winfo_screenwidth(), self.winfo_screenheight()
         self.width, self.height = width//2, height//2
         self.geometry(f'{self.width}x{self.height}+{width//4}+{height//4}')
+        self.state('zoomed')
         self.minsize(850, 550)
-        self['bg'] = '#333333'
+        self['bg'] = '#444444'
 
         cw.CustomStyle(self)
 
@@ -42,7 +50,7 @@ class MainGUI(tk.Tk):
         df2_f = {'x': stv_f['w'], 'y': stv_f['y'], 'w': stv_f['w'], 'h': stv_f['h']}
         but_f = {'x': df1_f['x'], 'y': df2_f['y'], 'w': df1_f['w'], 'h': df2_f['h']}
 
-        self.cat_frame = tk.Frame(self, bg='#777777')
+        self.cat_frame = tk.Frame(self, bg='#98c9e0')
         self.cat_frame.place(relx=cat_f['x'], rely=cat_f['y'], relwidth=cat_f['w'], relheight=cat_f['h'])
 
         self.treeview_frame = tk.Frame(self, bg='yellow')
@@ -227,7 +235,7 @@ class MainGUI(tk.Tk):
 
         treeview.tag_configure('normal', background=cw.TV_BG, foreground='#d0d0d0', font=('Gadugi', 14, 'normal'))
         treeview.tag_configure('selected', background='#d1ae62', foreground='#262626', font=('Gadugi', 14, 'bold'))
-        treeview.tag_configure('parent', background='#d6598a', foreground='#262626', font=('Gadugi', 15, 'bold',))
+        treeview.tag_configure('parent', background='#6395aa', foreground='#262626', font=('Gadugi', 15, 'bold',))
 
     def populate_sel_treeview_frame(self):
         frame = tk.Frame(self.selected_quests_frame, bg='#262626')
@@ -262,8 +270,7 @@ class MainGUI(tk.Tk):
         buttons = [[loc['pointers'], 'call_pointers'], [loc['history'], 'call_history'], [loc['start'], 'call_start']]
         for text, command in buttons:
             button = cw.Button(self.buttons_frame, text=text, command=getattr(self, command, None),
-                               # font=FONT + '-size 18',
-                               bg='#262626')
+                               font=(cw.FONT, 18, 'bold'), bg='#262626')
             button.pack(fill='both', expand=1)
 
     def populate_details_frame1(self):
@@ -296,7 +303,7 @@ class MainGUI(tk.Tk):
         time_label.pack(fill='both', expand=1, side='left')
 
     def populate_main_treeview(self, category):
-        self.group = group = 0
+        self.group = group = configs['group']
 
         self.main_treeview.delete(*self.main_treeview.get_children())
         quests = db.get_quests_by_category(category)
