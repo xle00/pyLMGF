@@ -25,8 +25,9 @@ class MainGUI(tk.Tk):
         super(MainGUI, self).__init__()
         width, height = self.winfo_screenwidth(), self.winfo_screenheight()
         self.width, self.height = width//2, height//2
-        self.geometry(f'{self.width}x{self.height}+{width//4}+{height//4}')
-        self.state('zoomed')
+        # self.geometry(f'{self.width}x{self.height}+{width//4}+{height//4}')
+        # self.state('zoomed')
+        self.geometry(f"1210x750+{1920//2-1210//2}+{1080//2-750//2}")
         self.minsize(850, 550)
         self['bg'] = '#444444'
 
@@ -50,7 +51,7 @@ class MainGUI(tk.Tk):
         df2_f = {'x': stv_f['w'], 'y': stv_f['y'], 'w': stv_f['w'], 'h': stv_f['h']}
         but_f = {'x': df1_f['x'], 'y': df2_f['y'], 'w': df1_f['w'], 'h': df2_f['h']}
 
-        self.cat_frame = tk.Frame(self, bg='#98c9e0')
+        self.cat_frame = tk.Frame(self, bg='#888888')
         self.cat_frame.place(relx=cat_f['x'], rely=cat_f['y'], relwidth=cat_f['w'], relheight=cat_f['h'])
 
         self.treeview_frame = tk.Frame(self, bg='yellow')
@@ -233,9 +234,9 @@ class MainGUI(tk.Tk):
         treeview.column('Name', minwidth=700, width=700, stretch=1, anchor='w')
         treeview.column('Points', minwidth=112, width=112, stretch=1, anchor='w')
 
-        treeview.tag_configure('normal', background=cw.TV_BG, foreground='#d0d0d0', font=('Gadugi', 14, 'normal'))
-        treeview.tag_configure('selected', background='#d1ae62', foreground='#262626', font=('Gadugi', 14, 'bold'))
-        treeview.tag_configure('parent', background='#6395aa', foreground='#262626', font=('Gadugi', 15, 'bold',))
+        treeview.tag_configure('normal', background=cw.TV_BG, foreground=cw.ALT_FG, font=(cw.font, 14, 'normal'))
+        treeview.tag_configure('selected', background='#d1ae62', foreground='#262626', font=(cw.font, 14, 'bold'))
+        treeview.tag_configure('parent', background='#3a5763', foreground=cw.ALT_FG, font=(cw.font, 15, 'bold',))
 
     def populate_sel_treeview_frame(self):
         frame = tk.Frame(self.selected_quests_frame, bg='#262626')
@@ -270,7 +271,7 @@ class MainGUI(tk.Tk):
         buttons = [[loc['pointers'], 'call_pointers'], [loc['history'], 'call_history'], [loc['start'], 'call_start']]
         for text, command in buttons:
             button = cw.Button(self.buttons_frame, text=text, command=getattr(self, command, None),
-                               font=(cw.FONT, 18, 'bold'), bg='#262626')
+                               font=(cw.font, 18, 'bold'), bg='#262626')
             button.pack(fill='both', expand=1)
 
     def populate_details_frame1(self):
@@ -414,7 +415,7 @@ class MainGUI(tk.Tk):
         tv = self.main_treeview
         selected = []
         for i in tv.selection():
-            print(i, i.isdecimal())
+            # print(i, i.isdecimal())
             if i.isdecimal():
                 d = tv.set(i)
                 d.update({'Id': i})
@@ -593,14 +594,14 @@ class MainGUI(tk.Tk):
             self.update_idletasks()
             for c in children:
                 if self.main_treeview.focus():
-                    c.configure(font=('Gadugi', 10, 'bold'))
+                    c.configure(font=(cw.font, 10, 'bold'))
             if self.main_treeview.focus():
                 self.refresh_details('main', .8)
         else:
             self.update_idletasks()
             for c in children:
                 if self.main_treeview.focus():
-                    c.configure(font=('Gadugi', 14, 'bold'))
+                    c.configure(font=(cw.font, 14, 'bold'))
             if self.main_treeview.focus():
                 self.refresh_details('main', 1)
 
@@ -616,13 +617,13 @@ class MainGUI(tk.Tk):
             self.update_idletasks()
             for c in children:
                 self.update_idletasks()
-                c.configure(font=('Gadugi', 10, 'bold'))
+                c.configure(font=(cw.font, 10, 'bold'))
             self.refresh_details('sel', .8)
         else:
             self.update_idletasks()
             for c in children:
                 self.update_idletasks()
-                c.configure(font=('Gadugi', 14, 'bold'))
+                c.configure(font=(cw.font, 14, 'bold'))
             self.refresh_details('sel', 1)
 
     def call_start(self):

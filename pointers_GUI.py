@@ -62,8 +62,14 @@ class ConfigGUI(top):
     def test_pointers(self):
         for name, _vars in self.vars.items():
             module = _vars[0].get()
-            base_addr = int(_vars[1].get(), 16)
-            offsets = [int(i.get(), 16) for i in _vars[2:-1]]
+
+            try:
+                base_addr = int(_vars[1].get(), 16)
+            except ValueError:
+                base_addr = 0
+
+            offsets = [int(i.get(), 16) for i in _vars[2:-1] if i]
+
             result_label = _vars[-1]
 
             module_addr = self.lmp.get_module_address_by_name(module)
@@ -77,7 +83,7 @@ class ConfigGUI(top):
             else:
                 result_label.config(text='???', fg='#ff5555')
 
-        self.after(1000, self.test_pointers)
+        self.after(100, self.test_pointers)
 
     def update_pointers(self, name):
         _vars = self.vars[name]

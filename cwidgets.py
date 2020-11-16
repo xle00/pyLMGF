@@ -1,10 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 
-FONT = '-family Gadugi -weight bold '
+
 YELLOW = '#f7e083'
 # MAIN_FG = '#efeee9'
 MAIN_FG = '#e7e2d6'
+ALT_FG = '#dfdace'
 REMOVE_RED = '#d3a9a9'
 ADD_GREEN = '#bcd1c9'#'#87dbac'#'#87db87'
 SELECTED_YELLOW = '#d1ae62'
@@ -42,7 +43,7 @@ class Button(tk.Button):
             bg=BUTTON_BG,
             fg=MAIN_FG,
             relief='flat',
-            font=FONT + '-weight bold ',
+            font=(font, 10, 'bold'),
             anchor='center',
             cursor='hand2',
         )
@@ -88,7 +89,7 @@ class CustomStyle(ttk.Style):
 
         # heading style
         self.configure("treeview.Treeview.Heading",
-                       font=('Gadugi', 18, 'bold'),
+                       font=(font, 18, 'bold'),
                        background='black',
                        foreground='white'
                        )
@@ -132,7 +133,7 @@ class CustomStyle(ttk.Style):
 
         # heading style
         self.configure("sectreeview.Treeview.Heading",
-                       font=('Gadugi', 14, 'bold'),
+                       font=(font, 14, 'bold'),
                        background='#262626',
                        foreground='#d0d0d0'
                        )
@@ -148,7 +149,7 @@ class CustomStyle(ttk.Style):
         self.configure("sectreeview.Treeview",
                        highlightthickness=0,
                        bd=0,
-                       font=('Gadugi', 10),
+                       font=(font, 10),
                        background='#222222',
                        rowheight=25
                        )
