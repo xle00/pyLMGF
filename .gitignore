@@ -4,3 +4,5 @@ __pycache__/
 venv/
 history.db-journal
 history.db
+get_names.py
+names.db

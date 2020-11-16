@@ -126,7 +126,8 @@ class ProcessMemory:
     def read_string(self, lp_base_address, string_size):
         string = ''
         for i in range(string_size):
-            char = self.read_byte(lp_base_address + i*2).to_bytes(1, 'little').decode('utf-8', 'replace')
+            byte = self.read_byte(lp_base_address + i*2)
+            char = byte.to_bytes(1, 'big').decode('cp1252', 'replace')
             if ord(char) == 0:
                 break
             string += char

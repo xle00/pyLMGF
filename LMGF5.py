@@ -1,3 +1,5 @@
+
+
 import time
 from Mouse import Mouse
 from Process import ProcessMemory, ProcessWindow
@@ -126,6 +128,17 @@ class MemoryReader(ProcessMemory):
 
         return value
 
+    def get_quest_name(self):
+        # get pointer
+        module, base_pointer, pointers_ = self.pointers.get_pointer_by_name('quest_name')
+
+        # get value at address
+        module_addr = self.get_module_address_by_name(module)
+        addr = self.get_pointer(module_addr + base_pointer, pointers_)
+        value = self.read_string(addr, 200)
+
+        return value
+
 
 class GuildFest:
     def __init__(self):
@@ -161,13 +174,14 @@ class GuildFest:
         # identifies quest and configures slot
         slot = self.current_slot
         details = self.memory.get_mission_details()
-        qid = self.db.identify_quest(*details)
+        name = self.memory.get_quest_name()
+        qid = self.db.identify_quest(*details, name)
 
         slot.timer = None
         slot.target = None
         slot.qid = qid
 
-        print(self.get_quest_name(slot.qid))
+        print(self.get_quest_name(slot.qid), name)
         if self.is_selected(slot.qid):
             self.get_the_quest()
 
@@ -198,7 +212,7 @@ class GuildFest:
             return
 
         self.screenshot_quest()
-        self.pushbullet()
+        # self.pushbullet()
         os.remove('temp.jpeg')
 
         handle_close()
@@ -272,9 +286,6 @@ def save_history(sid, slot: Slot, _time):
             return
 
         hist.insert_history(sid, _time, 'q', slot.number, slot.qid)
-
-
-
 
 
 def main():

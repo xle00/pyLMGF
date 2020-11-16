@@ -75,7 +75,7 @@ class QuestDB(sqlite3.Connection):
         name = name.lower()
         for qid, ambid in quests:
             # print(qid)
-            partial = self.cur.execute('SELECT name FROM ambigs WHERE id = ?', (ambid,)).fetchone()[0]
+            partial = self.cur.execute('SELECT pt FROM ambigs WHERE id = ?', (ambid,)).fetchone()[0]
             if partial in name:
                 return qid
 
