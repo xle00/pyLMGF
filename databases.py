@@ -8,6 +8,7 @@ class QuestDB(sqlite3.Connection):
         super(QuestDB, self).__init__('quests.db')
         self.cur = self.cursor()
         self.lang = get_system_language()[:2]
+        self.game_lang = None
 
     def set_selected(self, quest_id_list):
         subquery = f"({','.join(['?'] * len(quest_id_list))})"
@@ -75,9 +76,13 @@ class QuestDB(sqlite3.Connection):
         name = name.lower()
         for qid, ambid in quests:
             # print(qid)
-            partial = self.cur.execute('SELECT pt FROM ambigs WHERE id = ?', (ambid,)).fetchone()[0]
+            partial = self.cur.execute(f'SELECT {self.game_lang} FROM ambigs WHERE id = ?', (ambid,)).fetchone()[0]
             if partial in name:
                 return qid
+
+    def get_ambig_langs(self):
+        result = self.cur.execute('SELECT * FROM ambigs')
+        return [i[0] for i in result.description if i != 'id']
 
 
 class Pointers(sqlite3.Connection):
@@ -188,10 +193,11 @@ class LocalDB(sqlite3.Connection):
     def __init__(self):
         super(LocalDB, self).__init__('localization.db')
         self.cur = self.cursor()
+        self.locale = get_system_language()
 
-    def get_main_localization(self, locale):
+    def get_main_localization(self):
         try:
-            result = self.cur.execute(f'SELECT id, {locale} FROM main').fetchall()
+            result = self.cur.execute(f'SELECT id, {self.locale} FROM main').fetchall()
         except sqlite3.OperationalError:
             result = self.cur.execute(f'SELECT id, en_us FROM main').fetchall()
         return dict(i for i in result)

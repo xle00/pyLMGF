@@ -1,0 +1,22 @@
+{
+   "2": ["tcn", "Traditional 中文"],
+   "1": ["eng", "English"],
+   "3": ["fre", "Français"],
+   "4": ["ger", "German"],
+   "6": ["rus", "Русский"],
+   "5": ["spa", "Español"],
+  "20": ["spl", "Español LATAM"],
+   "7": ["scn", "Simplified 中文"],
+   "8": ["ind", "Indonesia"],
+   "9": ["vie", "tiếng việt"],
+  "10": ["tur", "Türkçe"],
+  "11": ["tha", "ภาษาไทย"],
+  "12": ["ita", "Italiano"],
+  "13": ["por", "Português"],
+  "14": ["kor", "한국어"],
+  "15": ["jpn", "日本語"],
+  "16": ["ukr", "Українська"],
+  "17": ["may", "Bahasa Melayu"],
+  "18": ["ara", "العربية"],
+  "19": ["pol", "polski"]
+}

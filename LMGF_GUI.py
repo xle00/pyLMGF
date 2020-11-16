@@ -2,22 +2,17 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import ImageTk
-import json
 
 from databases import QuestDB, Pointers, LocalDB
 import functions as funcs
 import cwidgets as cw
-
-
-def load_configs():
-    with open('configs.json', 'r') as f:
-        return json.loads(f.read())
+from configs import load_configs
 
 
 configs = load_configs()
 db = QuestDB()
 pointers = Pointers()
-loc = LocalDB().get_main_localization(funcs.get_system_language())
+loc = LocalDB().get_main_localization()
 
 
 class MainGUI(tk.Tk):

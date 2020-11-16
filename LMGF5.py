@@ -1,18 +1,34 @@
-
-
 import time
 from Mouse import Mouse
 from Process import ProcessMemory, ProcessWindow
-from databases import Pointers, QuestDB, HistoryDB
+from databases import Pointers, QuestDB, HistoryDB, LocalDB
 from mss import mss
 from PIL import ImageGrab
 import os
 import pushbullet
 import sys
+from functions import game_registry_search
+from configs import load_game_languages
 
-pb = pushbullet.PushBullet()
-sct = mss()
-hist = HistoryDB()
+
+def get_game_language():
+    return game_registry_search('Other_Language')['Other_Language']
+
+
+def get_game_res():
+    result = game_registry_search('Width', 'Height')
+
+    return result['Width'], result['Height']
+
+
+def save_name(qid, text, lang):
+    try:
+        import get_names
+
+        get_names.insert(qid, text, lang)
+
+    except ModuleNotFoundError:
+        pass
 
 
 def get_pixel_brightness(x, y):
@@ -23,8 +39,33 @@ def get_pixel_brightness(x, y):
     return sum(pixel) / len(pixel)
 
 
-def handle_close():
-    sys.exit()
+def handle_close(text=None):
+    sys.exit(text)
+
+
+pb = pushbullet.PushBullet()
+sct = mss()
+hist = HistoryDB()
+db = QuestDB()
+local = LocalDB().get_main_localization()
+
+
+def validate_start():
+    all_langs = load_game_languages()
+    current_lang = all_langs[get_game_language()]
+    available_langs = db.get_ambig_langs()
+
+    if current_lang[0] not in available_langs:
+        text = f'({current_lang[1]}) {local["lang_not_supported"]}\n'\
+               f'{local["supported_langs"]}: '\
+               f'{", ".join([lang[1] for lang in all_langs.values() if lang[0] in available_langs])}'
+        handle_close(text)
+    db.game_lang = current_lang[0]
+
+    width, height = get_game_res()
+    if width != 1280 or height != 720:
+        text = f'{local["wrong_res"]}: {width}x{height}\n{local["use"]} 1280x720'
+        handle_close(text)
 
 
 class Slot:
@@ -150,7 +191,6 @@ class GuildFest:
 
         self.window = ProcessWindow('UnityWndClass', 'Lords Mobile')
         self.memory = MemoryReader()
-        self.db = QuestDB()
 
         self.current_scroll = 0
 
@@ -175,7 +215,7 @@ class GuildFest:
         slot = self.current_slot
         details = self.memory.get_mission_details()
         name = self.memory.get_quest_name()
-        qid = self.db.identify_quest(*details, name)
+        qid = db.identify_quest(*details, name)
 
         slot.timer = None
         slot.target = None
@@ -194,12 +234,14 @@ class GuildFest:
         self.current_slot.target = clock + timer
         self.current_slot.qid = None
 
-    def get_quest_name(self, qid):
-        _, name, points, *_ = self.db.get_quest_by_id(qid)
+    @staticmethod
+    def get_quest_name(qid):
+        _, name, points, *_ = db.get_quest_by_id(qid)
         return f'{name}, +{points}'
 
-    def is_selected(self, qid):
-        return qid in self.db.get_selected_ids()
+    @staticmethod
+    def is_selected(qid):
+        return qid in db.get_selected_ids()
 
     def get_the_quest(self):
         # gets the quest and exits the program
@@ -274,10 +316,11 @@ class GuildFest:
 
 
 def save_history(sid, slot: Slot, _time):
+    _time = int(_time)
     last_identifier = hist.get_last_identifier(sid, slot.number)
     if slot.timer is not None:
-        if last_identifier == 't':
-            return
+        # if last_identifier == 't':
+        #     return
 
         hist.insert_history(sid, _time, 't', slot.number, slot.timer)
 
@@ -289,21 +332,23 @@ def save_history(sid, slot: Slot, _time):
 
 
 def main():
+    validate_start()
+
     wait_timer = 2*60
     fg = GuildFest()
     check_slot = 0
 
     # create "session" for history
     start = int(time.time())
-    selected = fg.db.get_selected_ids()
+    selected = db.get_selected_ids()
     sid = hist.get_highest_sid() + 1
-    # hist.insert_session(sid, fg.memory.get_player_name(), start, 0, selected)
+    hist.insert_session(sid, fg.memory.get_player_name(), start, 0, selected)
 
     while True:
         fg.window.activate()
         fg.get_board()
-        # for slot in fg.slots:
-        #     save_history(sid, slot, time.time() - start)
+        for slot in fg.slots:
+            save_history(sid, slot, time.time() - start)
 
         while fg.sorted_slots:
             slot = fg.sorted_slots.pop()
@@ -331,6 +376,8 @@ def main():
                 time.sleep(.5)
                 fg.window.get_position()
                 fg.wait_quest()
+            save_history(sid, slot, time.time()-start)
+            print()
 
 
 if __name__ == '__main__':

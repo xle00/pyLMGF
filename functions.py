@@ -1,6 +1,7 @@
 from PIL import Image
 import ctypes
 import locale
+import winreg
 
 
 def load_quest_image(img_index, height=None, width=None, resize=1.0):
@@ -72,3 +73,27 @@ def get_most_common_color(img, border_width=1):
 def get_system_language():
     return locale.windows_locale[ctypes.windll.kernel32.GetUserDefaultUILanguage()].lower()
 
+
+def game_registry_search(*args):
+    handle = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'SOFTWARE\IGG\Lords Mobile')
+
+    result = {}
+    for arg in args:
+        result.update({arg: None})
+
+        count = 0
+        found = False
+
+        while not found:
+            try:
+                name, value, _ = winreg.EnumValue(handle, count)
+                if arg in name:
+                    value = value[:-1].decode() if type(value) is bytes else value
+                    result.update({arg: value})
+                    found = True
+                count += 1
+
+            except OSError:
+                break
+
+    return result
