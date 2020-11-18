@@ -20,13 +20,13 @@ class MainGUI(tk.Tk):
         super(MainGUI, self).__init__()
         width, height = self.winfo_screenwidth(), self.winfo_screenheight()
         self.width, self.height = width//2, height//2
-        # self.geometry(f'{self.width}x{self.height}+{width//4}+{height//4}')
-        # self.state('zoomed')
-        self.geometry(f"1210x750+{1920//2-1210//2}+{1080//2-750//2}")
+        self.geometry(f'{self.width}x{self.height}+{width//4}+{height//4}')
+        self.state('zoomed')
+        # self.geometry(f"1210x750+{1920//2-1210//2}+{1080//2-750//2}")
         self.minsize(850, 550)
         self['bg'] = '#444444'
 
-        cw.CustomStyle(self)
+        self.style = cw.CustomStyle(self)
 
         self.last_button = None
 
@@ -199,7 +199,7 @@ class MainGUI(tk.Tk):
 
     def populate_tab_frame(self):
         for tab in db.get_categories():
-            button = cw.Button(self.cat_frame, text=tab, font=(cw.font, 12, 'normal'))
+            button = cw.Button(self.cat_frame, text=tab, font=(cw.FONT, 12, 'normal'))
             button['command'] = lambda t=tab, b=button: self.tab_button_command(t, b)
             button.pack(side='left', fill='both', expand=1, pady=(0, 2))
 
@@ -209,8 +209,9 @@ class MainGUI(tk.Tk):
 
         self.main_scrollbar = scrollbar = tk.Scrollbar(frame, orient='vertical',)
 
+        style = self.style.create_tv_style('maintreeview', font=(cw.FONT, 14), rowheight=45, selectedbg=cw.ADD_GREEN)
         treeview = self.main_treeview = cw.TreeView(frame, displaycolumns='#all', height=8, show='tree',
-                                                    yscrollcommand=scrollbar.set, style='treeview.Treeview',
+                                                    yscrollcommand=scrollbar.set, style=style,
                                                     padding=10)
         treeview['columns'] = ('Name', 'Points')
         treeview.pack(side='left', fill='both', expand=1)
@@ -218,7 +219,7 @@ class MainGUI(tk.Tk):
         scrollbar['command'] = self.main_treeview.yview
 
         button = cw.Button(self.treeview_frame, text=loc['add_quest'], command=self.add_to_selected, fg=cw.ADD_GREEN,
-                           bg='#1d2d2a', relief='flat', font=(cw.font, 13, 'bold'))
+                           bg='#1d2d2a', relief='flat', font=(cw.FONT, 13, 'bold'))
         button.place(relx=0, rely=.9, relwidth=1, relheight=.1)
 
         treeview.heading('#0', anchor='w', text='')
@@ -229,15 +230,17 @@ class MainGUI(tk.Tk):
         treeview.column('Name', minwidth=700, width=700, stretch=1, anchor='w')
         treeview.column('Points', minwidth=112, width=112, stretch=1, anchor='w')
 
-        treeview.tag_configure('normal', background=cw.TV_BG, foreground=cw.ALT_FG, font=(cw.font, 14, 'normal'))
-        treeview.tag_configure('selected', background='#d1ae62', foreground='#262626', font=(cw.font, 14, 'bold'))
-        treeview.tag_configure('parent', background='#3a5763', foreground=cw.ALT_FG, font=(cw.font, 15, 'bold',))
+        treeview.tag_configure('normal', background=cw.TV_BG, foreground=cw.ALT_FG, font=(cw.FONT, 14, 'normal'))
+        treeview.tag_configure('selected', background='#d1ae62', foreground='#262626', font=(cw.FONT, 14, 'bold'))
+        treeview.tag_configure('parent', background='#3a5763', foreground=cw.ALT_FG, font=(cw.FONT, 15, 'bold',))
 
     def populate_sel_treeview_frame(self):
         frame = tk.Frame(self.selected_quests_frame, bg='#262626')
         frame.place(relx=0, rely=0, relwidth=1, relheight=.85)
 
-        treeview = self.sel_treeview = cw.TreeView(frame, style='sectreeview.Treeview',
+        style = self.style.create_tv_style('seltreeview', font=(cw.FONT, 10), heading_font=(cw.FONT, 14, 'bold'),
+                                           selectedbg=cw.REMOVE_RED, heading_bg='#282828')
+        treeview = self.sel_treeview = cw.TreeView(frame, style=style,
                                                    height=6, padding=(0, 5, 0))
         treeview.configure(columns=('Name', 'Points'))
         treeview.pack(side='left', fill='both', expand=1)
@@ -266,7 +269,7 @@ class MainGUI(tk.Tk):
         buttons = [[loc['pointers'], 'call_pointers'], [loc['history'], 'call_history'], [loc['start'], 'call_start']]
         for text, command in buttons:
             button = cw.Button(self.buttons_frame, text=text, command=getattr(self, command, None),
-                               font=(cw.font, 18, 'bold'), bg='#262626')
+                               font=(cw.FONT, 18, 'bold'), bg='#262626')
             button.pack(fill='both', expand=1)
 
     def populate_details_frame1(self):
@@ -529,24 +532,24 @@ class MainGUI(tk.Tk):
             if w >= width:
                 for button in buttons:
                     if button is self.last_button:
-                        button.configure(font=(cw.font, size, 'bold'))
+                        button.configure(font=(cw.FONT, size, 'bold'))
                     else:
-                        button.configure(font=(cw.font, size, 'normal'))
+                        button.configure(font=(cw.FONT, size, 'normal'))
                 break
         for w, size in sizes[::-1]:
             if w >= width:
                 for button in buttons:
                     if button is self.last_button:
-                        button.configure(font=(cw.font, size, 'bold'))
+                        button.configure(font=(cw.FONT, size, 'bold'))
                     else:
-                        button.configure(font=(cw.font, size, 'normal'))
+                        button.configure(font=(cw.FONT, size, 'normal'))
                 break
         else:
             for button in buttons:
                 if button is self.last_button:
-                    button.configure(font=(cw.font, sizes[0][1], 'bold'))
+                    button.configure(font=(cw.FONT, sizes[0][1], 'bold'))
                 else:
-                    button.configure(font=(cw.font, sizes[0][1], 'normal'))
+                    button.configure(font=(cw.FONT, sizes[0][1], 'normal'))
 
     def resize_main_treeview(self):
         button = [widget for widget in self.treeview_frame.children.values() if isinstance(widget, tk.Button)][0]
@@ -589,14 +592,14 @@ class MainGUI(tk.Tk):
             self.update_idletasks()
             for c in children:
                 if self.main_treeview.focus():
-                    c.configure(font=(cw.font, 10, 'bold'))
+                    c.configure(font=(cw.FONT, 10, 'bold'))
             if self.main_treeview.focus():
                 self.refresh_details('main', .8)
         else:
             self.update_idletasks()
             for c in children:
                 if self.main_treeview.focus():
-                    c.configure(font=(cw.font, 14, 'bold'))
+                    c.configure(font=(cw.FONT, 14, 'bold'))
             if self.main_treeview.focus():
                 self.refresh_details('main', 1)
 
@@ -612,18 +615,18 @@ class MainGUI(tk.Tk):
             self.update_idletasks()
             for c in children:
                 self.update_idletasks()
-                c.configure(font=(cw.font, 10, 'bold'))
+                c.configure(font=(cw.FONT, 10, 'bold'))
             self.refresh_details('sel', .8)
         else:
             self.update_idletasks()
             for c in children:
                 self.update_idletasks()
-                c.configure(font=(cw.font, 14, 'bold'))
+                c.configure(font=(cw.FONT, 14, 'bold'))
             self.refresh_details('sel', 1)
 
     def call_start(self):
         from LMGF5 import main
-        self.destroy()
+        self.iconify()
         main()
 
     def call_pointers(self):
@@ -631,7 +634,7 @@ class MainGUI(tk.Tk):
         pointers_GUI.ConfigGUI(self)
 
     def call_history(self):
-        from hisory_gui import ChooseGUI
+        from history_gui import ChooseGUI
         ChooseGUI(self)
 
 

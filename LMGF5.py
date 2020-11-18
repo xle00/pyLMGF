@@ -48,6 +48,7 @@ sct = mss()
 hist = HistoryDB()
 db = QuestDB()
 local = LocalDB().get_main_localization()
+start = 0
 
 
 def validate_start():
@@ -221,6 +222,9 @@ class GuildFest:
         slot.target = None
         slot.qid = qid
 
+        save_name(qid, name, db.game_lang)
+        save_history(hist.get_highest_sid(), self.current_slot, time.time() - start)
+
         print(self.get_quest_name(slot.qid), name)
         if self.is_selected(slot.qid):
             self.get_the_quest()
@@ -233,6 +237,8 @@ class GuildFest:
         self.current_slot.timer = timer
         self.current_slot.target = clock + timer
         self.current_slot.qid = None
+
+        save_history(hist.get_highest_sid(), self.current_slot, time.time() - start)
 
     @staticmethod
     def get_quest_name(qid):
@@ -254,7 +260,7 @@ class GuildFest:
             return
 
         self.screenshot_quest()
-        # self.pushbullet()
+        self.pushbullet()
         os.remove('temp.jpeg')
 
         handle_close()
@@ -334,21 +340,23 @@ def save_history(sid, slot: Slot, _time):
 def main():
     validate_start()
 
-    wait_timer = 2*60
+    wait_timer = 5*60
     fg = GuildFest()
     check_slot = 0
 
     # create "session" for history
+    global start
     start = int(time.time())
     selected = db.get_selected_ids()
     sid = hist.get_highest_sid() + 1
-    hist.insert_session(sid, fg.memory.get_player_name(), start, 0, selected)
+    hist.insert_session(sid, fg.memory.get_player_name(), start, selected)
 
     while True:
         fg.window.activate()
         fg.get_board()
-        for slot in fg.slots:
-            save_history(sid, slot, time.time() - start)
+        exit_gui()
+        # for slot in fg.slots:
+        #     save_history(sid, slot, time.time() - start)
 
         while fg.sorted_slots:
             slot = fg.sorted_slots.pop()
@@ -376,8 +384,6 @@ def main():
                 time.sleep(.5)
                 fg.window.get_position()
                 fg.wait_quest()
-            save_history(sid, slot, time.time()-start)
-            print()
 
 
 if __name__ == '__main__':

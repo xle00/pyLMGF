@@ -11,8 +11,10 @@ ADD_GREEN = '#bcd1c9'#'#87dbac'#'#87db87'
 SELECTED_YELLOW = '#d1ae62'
 BUTTON_BG = '#323536'
 BUTTON_BG_HOVER = '#464646'
-font = 'Segoe UI'
+FONT = 'Segoe UI'
 TV_BG = '#222222'
+HEADING_BG = '#363636'
+DARK_BLUE = "#123541"
 
 
 def invert_on_hover(widget: tk.Widget):
@@ -43,7 +45,7 @@ class Button(tk.Button):
             bg=BUTTON_BG,
             fg=MAIN_FG,
             relief='flat',
-            font=(font, 10, 'bold'),
+            font=(FONT, 10, 'bold'),
             anchor='center',
             cursor='hand2',
         )
@@ -68,101 +70,57 @@ class TreeView(ttk.Treeview):
         self.configure(
             selectmode='extended',
         )
-        # print(self.keys())
 
 
 class CustomStyle(ttk.Style):
     def __init__(self, parent):
         super(CustomStyle, self).__init__(parent)
-        self.main_treeview_style()
-        self.sec_treeview_style()
 
-    def main_treeview_style(self):
+    def create_tv_style(self, name, heading_font=FONT, heading_bg=HEADING_BG, heading_fg=MAIN_FG, font=FONT,
+                        rowheight=25, selectedfg='#262626', selectedbg=MAIN_FG):
+
+
         # heading layout
-        self.element_create("Custom.Treeheading.border", "from", "default")
-        self.layout("treeview.Treeview.Heading",
-                    [("Custom.Treeheading.cell", {'sticky': 'nsew'}),
-                     ("Custom.Treeheading.border", {'sticky': 'nswe', 'children':
-                         [("Custom.Treeheading.padding", {'sticky': 'nswe', 'children':
-                             [("Custom.Treeheading.image", {'side': 'right','sticky': ''}),
-                              ("Custom.Treeheading.text", {'sticky': 'we'})]})]}),])
+        try:
+            self.element_create(f"{name}.Treeheading.border", "from", "default")
+            self.layout(f"{name}.Treeview.Heading",
+                        [(f"{name}.Treeheading.cell", {'sticky': 'nsew'}),
+                         (f"{name}.Treeheading.border", {'sticky': 'nswe', 'children':
+                             [(f"{name}.Treeheading.padding", {'sticky': 'nswe', 'children':
+                                 [(f"{name}.Treeheading.image", {'side': 'right', 'sticky': ''}),
+                                  (f"{name}.Treeheading.text", {'sticky': 'we'})]})]}), ])
+        except tk.TclError:
+            return f'{name}.Treeview'
 
         # heading style
-        self.configure("treeview.Treeview.Heading",
-                       font=(font, 18, 'bold'),
-                       background='black',
-                       foreground='white'
+        self.configure(f"{name}.Treeview.Heading",
+                       font=heading_font,
+                       background=heading_bg,
+                       foreground=heading_fg
                        )
 
-        # heading map
-        self.map("treeview.Treeview.Heading",
-                 relief=[('active', 'groove'), ('pressed', 'sunken')],
-                 background=[('active', 'white')],
-                 foreground=[('active', 'black')])
-        # print(self.map('treeview.Treeview.Heading'))
-
         # style
-        self.configure("treeview.Treeview",
+        self.configure(f"{name}.Treeview",
                        highlightthickness=0,
                        bd=0,
-                       font=(font, 14),
-                       rowheight=45,
+                       font=font,
+                       rowheight=rowheight,
                        background=TV_BG,
+                       foreground=MAIN_FG
                        )
 
         # layout
-        self.layout("treeview.Treeview", [
-             ('treeview.Treeview.treearea', {'sticky': 'news'})])
+        self.layout(f"{name}.Treeview", [
+            ('treeview.Treeview.treearea', {'sticky': 'news'})])
 
         # map
-        self.map('treeview.Treeview',
-                 background=[('disabled', '#262626'), ('selected', ADD_GREEN)],
-                 foreground=[('disabled', MAIN_FG), ('selected', '#262626')],
+        self.map(f'{name}.Treeview',
+                 background=[('disabled', '#262626'), ('selected', selectedbg)],
+                 foreground=[('disabled', MAIN_FG), ('selected', selectedfg)],
                  relief=[('selected', 'flat')]
                  )
 
-    def sec_treeview_style(self):
-        # heading layout
-        self.element_create("Custom2.Treeheading.border", "from", "default")
-        self.layout("sectreeview.Treeview.Heading",
-                    [("Custom2.Treeheading.cell", {'sticky': 'nsew'}),
-                     ("Custom2.Treeheading.border", {'sticky': 'nswe', 'children':
-                        [("Custom2.Treeheading.padding", {'sticky': 'nswe', 'children':
-                            [("Custom2.Treeheading.image", {'side': 'right', 'sticky': ''}),
-                                ("Custom2.Treeheading.text", {'sticky': 'we'})]})]}), ])
-
-        # heading style
-        self.configure("sectreeview.Treeview.Heading",
-                       font=(font, 14, 'bold'),
-                       background='#262626',
-                       foreground='#d0d0d0'
-                       )
-
-        # heading map
-        self.map("sectreeview.Treeview.Heading",
-                 relief=[('active', 'flat'), ('pressed', 'sunken')],
-                 # background=[('active', 'white')],
-                 # foreground=[('active', 'black')])
-                 )
-
-        # style
-        self.configure("sectreeview.Treeview",
-                       highlightthickness=0,
-                       bd=0,
-                       font=(font, 10),
-                       background='#222222',
-                       rowheight=25
-                       )
-
-        # layout
-        self.layout("sectreeview.Treeview", [
-            ('sectreeview.Treeview.treearea', {'sticky': 'news'})])
-
-        # map
-        self.map('sectreeview.Treeview',
-                 background=[('disabled', '#262626'), ('selected', REMOVE_RED)],
-                 foreground=[('disabled', MAIN_FG), ('selected', '#262626')],
-                 )
+        return f'{name}.Treeview'
 
 
 class Label(tk.Label):
@@ -171,6 +129,72 @@ class Label(tk.Label):
         self.configure(
             bg='pink',
             fg=MAIN_FG,
-            font=(font, 16, 'bold'),
+            font=(FONT, 16, 'bold'),
         )
         self.config(**kw)
+
+
+class ScrollFrame(tk.Frame):
+    def __init__(self, parent, **kw):
+        super().__init__(parent, **kw)
+        self.y_list = [0, 0]
+        self.scroll_units = 1
+        self.config(relief='flat', borderwidth=0)
+        self.canvas = tk.Canvas(self, borderwidth=0, relief='flat', highlightthickness=0, bg=self.cget('bg'))
+        self.viewPort = tk.Frame(self.canvas, relief='flat', borderwidth=0, bg=self.cget('bg'))
+        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.scrollbar_scroll, width=20)
+        self.canvas.configure(yscrollcommand=self.vsb.set)
+
+        self.vsb.pack(side='right', fill='y')
+        self.canvas.pack(side='left', fill='both', expand=1)
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.viewPort, anchor="nw", tags="self.viewPort")
+
+        self.viewPort.bind("<Configure>", lambda e: self.on_frame_configure())
+        self.canvas.bind("<Configure>", self.on_canvas_configure)
+
+        self.on_frame_configure()
+
+    def bind_scroll(self, obj):
+        obj.bind('<B1-Motion>', self.drag_and_scroll)
+        obj.bind('<MouseWheel>', self.on_scroll)
+
+    def on_frame_configure(self):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def on_canvas_configure(self, event):
+        canvas_width = event.width
+        self.canvas.itemconfig(self.canvas_window, width=canvas_width)
+
+    def drag_and_scroll(self, event):
+        y = event.y
+        widget = str(event.widget)
+        if '!canvas' in widget and 'combobox' not in widget:
+            self.y_list[1] += y
+            self.scroll()
+
+    def scroll(self):
+        *_, start, end = self.canvas.bbox('all')
+        vsb_start, vsb_end = self.vsb.get()
+
+        number = (self.y_list[1] - self.y_list[0])
+
+        if 1 < abs(number) < 750 and end > 500:
+            new_start = number*-1*1.1/end + vsb_start
+
+            self.canvas.yview_moveto(new_start)
+
+        self.y_list[0] = self.y_list[1]
+
+    def on_scroll(self, event):
+        widget = str(event.widget)
+        if '!canvas' in widget and 'combobox' not in widget:
+            delta = event.delta
+            unit = -self.scroll_units if delta > 0 else self.scroll_units
+            self.canvas.yview_scroll(unit, 'units')
+
+    def scrollbar_scroll(self, *args):
+        if args[0] == 'scroll':
+            unit = -self.scroll_units if int(args[1]) < 0 else self.scroll_units
+            self.canvas.yview_scroll(unit, 'units')
+        else:
+            self.canvas.yview(*args)

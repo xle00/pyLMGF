@@ -52,6 +52,11 @@ class QuestDB(sqlite3.Connection):
 
         return result[0]
 
+    def get_quest_name_from_qid(self, qid):
+        nid = self.cur.execute('SELECT NAME FROM quests2 WHERE id = ?', (qid,)).fetchone()
+        if nid:
+            return self.get_quest_name(nid[0])
+
     def get_category_id(self, category):
         try:
             result = self.cur.execute(f'SELECT id FROM categories where {self.lang} = ?', (category,)).fetchone()
@@ -83,6 +88,10 @@ class QuestDB(sqlite3.Connection):
     def get_ambig_langs(self):
         result = self.cur.execute('SELECT * FROM ambigs')
         return [i[0] for i in result.description if i != 'id']
+
+    def get_quest_points(self, qid):
+        if qid:
+            return self.cur.execute('SELECT points FROM quests2 WHERE id = ?', (qid, )).fetchone()[0]
 
 
 class Pointers(sqlite3.Connection):
@@ -148,19 +157,17 @@ class HistoryDB(sqlite3.Connection):
                 sid INTEGER,
                 name TEXT,
                 start INTEGER,
-                end INTEGER,
-                selected STRING,
-                found INTEGER
+                selected STRING
             )''')
 
     def get_highest_sid(self):
         result = self.cur.execute('SELECT sid FROM indexes order by sid DESC').fetchone()
         return -1 if not result else result[0]
 
-    def insert_session(self, sid: int, name: str, start: int, end: int, selected: iter):
-        selected = ','.join(selected)
+    def insert_session(self, sid: int, name: str, start: int, selected: iter):
+        selected = ','.join([str(i) for i in selected])
         with self:
-            self.cur.execute('INSERT INTO indexes VALUES (?, ?, ?, ?, ?, Null)', (sid, name, start, end, selected))
+            self.cur.execute('INSERT INTO indexes VALUES (?, ?, ?, ?)', (sid, name, start, selected))
 
     def get_sessions(self):
         result = self.cur.execute('SELECT * FROM indexes').fetchall()
@@ -170,23 +177,28 @@ class HistoryDB(sqlite3.Connection):
         result = self.cur.execute('SELECT * FROM indexes where sid = ?', (sid,)).fetchone()
         return result
 
-    def set_session_end(self, sid, timestamp):
-        with self:
-            self.cur.execute('UPDATE indexes SET end = ? where sid = ?', (timestamp, sid))
-
     def insert_history(self, sid: int, time: int, identifier: str, slot: int, value: int):
         with self:
             self.cur.execute('''INSERT INTO history VALUES (?, ?, ?, ?, ?)''', (sid, time, identifier, slot, value))
 
     def get_history_by_sid(self, sid):
-        result = self.cur.execute('SELECT * FROM history where sid = ? order by rowid', (sid,)).fetchall()
-        print(result)
+        result = self.cur.execute('SELECT * FROM history where sid = ? order by time', (sid,)).fetchall()
         return result
 
     def get_last_identifier(self, sid, slot):
         result = self.cur.execute('SELECT identifier FROM history WHERE sid = ? AND SLOT = ? ORDER BY rowid DESC',
                                   (sid, slot)).fetchone()
         return result
+
+    def get_last_for_session(self, sid):
+        result = self.cur.execute('SELECT time, identifier, value'
+                                  ' FROM history where sid = ? order by time DESC', (sid,)).fetchone()
+        return result
+
+    def delete_session(self, sid):
+        with self:
+            self.cur.execute('DELETE FROM indexes WHERE sid = ?', (sid,))
+            self.cur.execute('DELETE FROM history WHERE SID = ?', (sid,))
 
 
 class LocalDB(sqlite3.Connection):
