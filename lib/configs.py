@@ -4,22 +4,24 @@ import base64
 
 
 def load_configs():
-    with open('../data/configs.json', 'r') as f:
+    with open('data\\configs.json', 'r') as f:
         return json.loads(f.read())
 
 
 def load_game_languages():
-    with open('../data/lang.json', 'r', encoding='utf-8') as f:
+    with open('data\\lang.json', 'r', encoding='utf-8') as f:
         return json.loads(f.read())
 
 
 class Pointers:
+    file = 'data\\pointers.json'
+
     @staticmethod
     def get_pointers():
         response = requests.get('https://api.github.com/repos/xle00/pointers/contents/lmgf.json')
         decoded = base64.b64decode(response.json()['content']).decode('utf-8')
 
-        with open('../data/pointers.json', 'w') as f:
+        with open(Pointers.file, 'w') as f:
             f.write(decoded)
 
         _json = json.loads(decoded)
@@ -34,7 +36,7 @@ class Pointers:
 
     @staticmethod
     def get_pointer_by_name(name):
-        with open('../data/pointers.json', 'r') as f:
+        with open(Pointers.file, 'r') as f:
             module, base, offsets = json.loads(f.read())[name]
         base = int(base, 16)
         offsets = [int(i, 16) for i in offsets.split()]
@@ -42,17 +44,17 @@ class Pointers:
 
     @staticmethod
     def save_pointers(name, values):
-        with open('../data/pointers.json', 'r') as f:
+        with open(Pointers.file, 'r') as f:
             pointers = json.loads(f.read())
 
         pointers[name] = values
 
-        with open('../data/pointers.json', 'w') as f:
+        with open(Pointers.file, 'w') as f:
             f.write(json.dumps(pointers))
 
     @staticmethod
     def get_pointers_offline():
-        with open('../data/pointers.json', 'r') as f:
+        with open(Pointers.file, 'r') as f:
             _json = json.loads(f.read())
 
         formatted = {}

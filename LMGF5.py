@@ -215,7 +215,6 @@ class GuildFest:
         slot.target = None
         slot.qid = qid
 
-        save_name(qid, name, db.game_lang)
         save_history(hist.get_highest_sid(), self.current_slot, time.time() - start)
 
         print(self.get_quest_name(slot.qid), name)
@@ -318,9 +317,6 @@ def save_history(sid, slot: Slot, _time):
     _time = int(_time)
     last_identifier = hist.get_last_identifier(sid, slot.number)
     if slot.timer is not None:
-        # if last_identifier == 't':
-        #     return
-
         hist.insert_history(sid, _time, 't', slot.number, slot.timer)
 
     elif slot.qid is not None:

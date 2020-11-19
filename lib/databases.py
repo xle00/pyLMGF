@@ -5,7 +5,7 @@ from lib.functions import get_system_language
 
 class QuestDB(sqlite3.Connection):
     def __init__(self):
-        super(QuestDB, self).__init__('quests.db')
+        super(QuestDB, self).__init__('data\\quests.db')
         self.cur = self.cursor()
         self.lang = get_system_language()[:2]
         self.game_lang = None
@@ -96,7 +96,7 @@ class QuestDB(sqlite3.Connection):
 
 class HistoryDB(sqlite3.Connection):
     def __init__(self):
-        super(HistoryDB, self).__init__('history.db')
+        super(HistoryDB, self).__init__('data\\history.db')
         self.cur = self.cursor()
         self.create_indexes_table()
         self.create_history_table()
@@ -163,7 +163,7 @@ class HistoryDB(sqlite3.Connection):
 
 class LocalDB(sqlite3.Connection):
     def __init__(self):
-        super(LocalDB, self).__init__('localization.db')
+        super(LocalDB, self).__init__('data\\localization.db')
         self.cur = self.cursor()
         self.locale = get_system_language()
 
