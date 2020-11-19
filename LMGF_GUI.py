@@ -3,15 +3,13 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import ImageTk
 
-from databases import QuestDB, Pointers, LocalDB
-import functions as funcs
-import cwidgets as cw
-from configs import load_configs
+from lib.databases import QuestDB, LocalDB
+from lib import functions as funcs, cwidgets as cw
+from lib.configs import load_configs
 
 
 configs = load_configs()
 db = QuestDB()
-pointers = Pointers()
 loc = LocalDB().get_main_localization()
 
 

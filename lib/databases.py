@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sqlite3
-from functions import get_system_language
+from lib.functions import get_system_language
 
 
 class QuestDB(sqlite3.Connection):
@@ -92,46 +92,6 @@ class QuestDB(sqlite3.Connection):
     def get_quest_points(self, qid):
         if qid:
             return self.cur.execute('SELECT points FROM quests2 WHERE id = ?', (qid, )).fetchone()[0]
-
-
-class Pointers(sqlite3.Connection):
-    def __init__(self):
-        super(Pointers, self).__init__('pointers.db')
-        self.cur = self.cursor()
-        self.create_pointers_table()
-
-    def create_pointers_table(self):
-        with self:
-            self.cur.execute('''CREATE TABLE IF NOT EXISTS pointers (
-                    name TEXT,
-                    module TEXT,
-                    base_offset TEXT,
-                    offsets TEXT
-                )''')
-
-    def get_pointers(self):
-        result = self.cur.execute('select * from pointers').fetchall()
-        formatted = []
-        for r in result:
-            name, module, base, offsets = r
-            offsets = [int(offset, 16) for offset in offsets.split()]
-            formatted.append([name, module, int(base, 16), *offsets])
-        return formatted
-
-    def get_pointer_by_name(self, name):
-        result = self.cur.execute('SELECT * FROM pointers WHERE name = ?', (name,)).fetchone()
-        module = result[1]
-        base_offset = int(result[2], 16)
-        offsets = [int(i, 16) for i in result[3].split()]
-        return module, base_offset, offsets
-
-    def save_pointers(self, name, values):
-        with self:
-            query = '''
-                UPDATE pointers
-                SET module = ?, base_offset = ?, offsets = ? WHERE name = ?
-            '''
-            self.cur.execute(query, (*values, name))
 
 
 class HistoryDB(sqlite3.Connection):

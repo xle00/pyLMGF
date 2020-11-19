@@ -1,7 +1,6 @@
 import tkinter as tk
-from databases import Pointers
+from lib.configs import Pointers
 
-pointers = Pointers()
 
 if __name__ == '__main__':
     top = tk.Tk
@@ -12,8 +11,9 @@ else:
 class ConfigGUI(top):
     def __init__(self, parent=None):
         super(ConfigGUI, self).__init__(parent)
-        from Process import ProcessMemory
-        self.pointers = pointers.get_pointers()
+        from lib.Process import ProcessMemory
+        self.pointers2 = Pointers.get_pointers_offline()
+
         self.lmp = ProcessMemory('Lords Mobile.exe')
         self.vars = {}
 
@@ -24,7 +24,9 @@ class ConfigGUI(top):
         frame = tk.Frame(self, bg='#404040')
         frame.pack(fill='both', expand=1)
 
-        for name, module, base_offset, *offsets in self.pointers:
+        for name, values in self.pointers2.items():
+            module, base_offset, offsets = values
+
             f = tk.Frame(frame, bg='#404040')
             f.pack(fill='both', expand=1)
 
@@ -90,7 +92,8 @@ class ConfigGUI(top):
         module = _vars[0].get()
         base_addr = _vars[1].get()
         offsets = ' '.join([i.get() for i in _vars[2:-1]])
-        pointers.save_pointers(name, [module, base_addr, offsets])
+
+        Pointers.save_pointers(name, [module, base_addr, offsets])
 
 
 if __name__ == '__main__':

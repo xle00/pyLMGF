@@ -1,14 +1,14 @@
 import time
-from Mouse import Mouse
-from Process import ProcessMemory, ProcessWindow
-from databases import Pointers, QuestDB, HistoryDB, LocalDB
+from lib.Mouse import Mouse
+from lib.Process import ProcessMemory, ProcessWindow
+from lib.databases import QuestDB, HistoryDB, LocalDB
 from mss import mss
 from PIL import ImageGrab
 import os
-import pushbullet
+from lib import pushbullet
 import sys
-from functions import game_registry_search
-from configs import load_game_languages
+from lib.functions import game_registry_search
+from lib.configs import load_game_languages, load_configs, Pointers
 
 
 def get_game_language():
@@ -21,16 +21,6 @@ def get_game_res():
     return result['Width'], result['Height']
 
 
-def save_name(qid, text, lang):
-    try:
-        import get_names
-
-        get_names.insert(qid, text, lang)
-
-    except ModuleNotFoundError:
-        pass
-
-
 def get_pixel_brightness(x, y):
     area = {"left": x, "top": y, "width": 1, "height": 1}
     img = sct.grab(area)
@@ -41,6 +31,10 @@ def get_pixel_brightness(x, y):
 
 def handle_close(text=None):
     sys.exit(text)
+
+
+if load_configs()['pointers_from_github']:
+    Pointers.get_pointers()
 
 
 pb = pushbullet.PushBullet()
@@ -112,11 +106,10 @@ class Slot:
 class MemoryReader(ProcessMemory):
     def __init__(self):
         super(MemoryReader, self).__init__('Lords Mobile.exe')
-        self.pointers = Pointers()
 
     def get_clock(self):
         # get pointer
-        module, base_pointer, pointers_ = self.pointers.get_pointer_by_name('clock')
+        module, base_pointer, pointers_ = Pointers.get_pointer_by_name('clock')
 
         # read value at address
         module_addr = self.get_module_address_by_name(module)
@@ -127,7 +120,7 @@ class MemoryReader(ProcessMemory):
 
     def get_active_timer(self):
         # get pointer
-        module, base_pointer, pointers_ = self.pointers.get_pointer_by_name('active_time')
+        module, base_pointer, pointers_ = Pointers.get_pointer_by_name('active_time')
 
         # read value at address
         module_addr = self.get_module_address_by_name(module)
@@ -149,7 +142,7 @@ class MemoryReader(ProcessMemory):
             size, offset = values
 
             # get pointer
-            module, base_pointer, pointers_ = self.pointers.get_pointer_by_name(name)
+            module, base_pointer, pointers_ = Pointers.get_pointer_by_name(name)
 
             # read string at address
             module_addr = self.get_module_address_by_name(module)
@@ -161,7 +154,7 @@ class MemoryReader(ProcessMemory):
 
     def get_player_name(self):
         # get pointer
-        module, base_pointer, pointers_ = self.pointers.get_pointer_by_name('player_name')
+        module, base_pointer, pointers_ = Pointers.get_pointer_by_name('player_name')
 
         # get value at address
         module_addr = self.get_module_address_by_name(module)
@@ -172,7 +165,7 @@ class MemoryReader(ProcessMemory):
 
     def get_quest_name(self):
         # get pointer
-        module, base_pointer, pointers_ = self.pointers.get_pointer_by_name('quest_name')
+        module, base_pointer, pointers_ = Pointers.get_pointer_by_name('quest_name')
 
         # get value at address
         module_addr = self.get_module_address_by_name(module)
@@ -354,7 +347,6 @@ def main():
     while True:
         fg.window.activate()
         fg.get_board()
-        exit_gui()
         # for slot in fg.slots:
         #     save_history(sid, slot, time.time() - start)
 

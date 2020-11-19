@@ -1,12 +1,10 @@
-import sqlite3
 import tkinter as tk
-from tkinter import ttk
 import random
 import datetime
-from databases import QuestDB, HistoryDB, LocalDB
+from lib.databases import QuestDB, HistoryDB, LocalDB
 from PIL import ImageTk
-from functions import load_icon_image, load_quest_image
-import cwidgets as cw
+from lib.functions import load_icon_image, load_quest_image
+from lib import cwidgets as cw
 import time
 
 
