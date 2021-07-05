@@ -65,26 +65,26 @@ def validate_start():
 
 class Slot:
     details = {
-        1: {'scroll': 0, 'pixel_x': 472, 'pixel_y': 383},
-        2: {'scroll': 0, 'pixel_x': 656, 'pixel_y': 383},
-        3: {'scroll': 0, 'pixel_x': 291, 'pixel_y': 636},
-        4: {'scroll': 0, 'pixel_x': 472, 'pixel_y': 636},
-        5: {'scroll': 0, 'pixel_x': 656, 'pixel_y': 636},
-        6: {'scroll': 8, 'pixel_x': 291, 'pixel_y': 614},
-        7: {'scroll': 8, 'pixel_x': 472, 'pixel_y': 614},
-        8: {'scroll': 8, 'pixel_x': 656, 'pixel_y': 614},
-        9: {'scroll': 16, 'pixel_x': 291, 'pixel_y': 596},
-        10: {'scroll': 16, 'pixel_x': 472, 'pixel_y': 596},
-        11: {'scroll': 16, 'pixel_x': 656, 'pixel_y': 596},
-        12: {'scroll': 24, 'pixel_x': 291, 'pixel_y': 580},
-        13: {'scroll': 24, 'pixel_x': 472, 'pixel_y': 580},
-        14: {'scroll': 24, 'pixel_x': 656, 'pixel_y': 580},
-        15: {'scroll': 32, 'pixel_x': 291, 'pixel_y': 563},
-        16: {'scroll': 32, 'pixel_x': 472, 'pixel_y': 563},
-        17: {'scroll': 32, 'pixel_x': 656, 'pixel_y': 563},
-        18: {'scroll': 40, 'pixel_x': 291, 'pixel_y': 547},
-        19: {'scroll': 40, 'pixel_x': 472, 'pixel_y': 547},
-        20: {'scroll': 40, 'pixel_x': 656, 'pixel_y': 547},
+        1: {'scroll': 0, 'pixel_x': 364, 'pixel_y': 410},
+        2: {'scroll': 0, 'pixel_x': 556, 'pixel_y': 410},
+        3: {'scroll': 0, 'pixel_x': 730, 'pixel_y': 410},
+        4: {'scroll': 0, 'pixel_x': 180, 'pixel_y': 650},
+        5: {'scroll': 0, 'pixel_x': 364, 'pixel_y': 650},
+        6: {'scroll': 0, 'pixel_x': 556, 'pixel_y': 650},
+        7: {'scroll': 0, 'pixel_x': 730, 'pixel_y': 650},
+        8: {'scroll': 8, 'pixel_x': 180, 'pixel_y': 650},
+        9: {'scroll': 8, 'pixel_x': 364, 'pixel_y': 650},
+        10: {'scroll': 8, 'pixel_x': 556, 'pixel_y': 650},
+        11: {'scroll': 8, 'pixel_x': 730, 'pixel_y': 650},
+        12: {'scroll': 16, 'pixel_x': 180, 'pixel_y': 650},
+        13: {'scroll': 16, 'pixel_x': 364, 'pixel_y': 650},
+        14: {'scroll': 16, 'pixel_x': 556, 'pixel_y': 650},
+        15: {'scroll': 16, 'pixel_x': 730, 'pixel_y': 650},
+        16: {'scroll': 29, 'pixel_x': 180, 'pixel_y': 444},
+        17: {'scroll': 29, 'pixel_x': 364, 'pixel_y': 444},
+        18: {'scroll': 29, 'pixel_x': 556, 'pixel_y': 444},
+        19: {'scroll': 29, 'pixel_x': 730, 'pixel_y': 444},
+        20: {'scroll': 29, 'pixel_x': 180, 'pixel_y': 680},
     }
 
     def __init__(self, number):
@@ -215,7 +215,7 @@ class GuildFest:
         slot.target = None
         slot.qid = qid
 
-        save_history(hist.get_highest_sid(), self.current_slot, time.time() - start)
+        # save_history(hist.get_highest_sid(), self.current_slot, time.time() - start)
 
         print(self.get_quest_name(slot.qid), name)
         if self.is_selected(slot.qid):
@@ -230,7 +230,7 @@ class GuildFest:
         self.current_slot.target = clock + timer
         self.current_slot.qid = None
 
-        save_history(hist.get_highest_sid(), self.current_slot, time.time() - start)
+        # save_history(hist.get_highest_sid(), self.current_slot, time.time() - start)
 
     @staticmethod
     def get_quest_name(qid):
@@ -302,7 +302,7 @@ class GuildFest:
 
     def is_quest(self):
         # checks if the current selected slot contais a quest
-        brightness = get_pixel_brightness(self.window.x + 885, self.window.y + 354)
+        brightness = get_pixel_brightness(self.window.x + 1001, self.window.y + 373)
         if brightness < 127:
             return False
         return True
@@ -343,8 +343,6 @@ def main():
     while True:
         fg.window.activate()
         fg.get_board()
-        # for slot in fg.slots:
-        #     save_history(sid, slot, time.time() - start)
 
         while fg.sorted_slots:
             slot = fg.sorted_slots.pop()

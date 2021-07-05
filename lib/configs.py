@@ -3,6 +3,11 @@ import requests
 import base64
 
 
+def save_configs(config_dict):
+    with open('data\\configs.json', 'w') as f:
+        f.write(json.dumps(config_dict, indent=2))
+
+
 def load_configs():
     with open('data\\configs.json', 'r') as f:
         return json.loads(f.read())
@@ -50,7 +55,7 @@ class Pointers:
         pointers[name] = values
 
         with open(Pointers.file, 'w') as f:
-            f.write(json.dumps(pointers))
+            f.write(json.dumps(pointers, indent=2))
 
     @staticmethod
     def get_pointers_offline():
