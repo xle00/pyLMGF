@@ -243,10 +243,10 @@ class GuildFest:
 
     def get_the_quest(self):
         # gets the quest and exits the program
-        Mouse.left_click(self.window.x + 867, self.window.y + 679)
+        Mouse.left_click(self.window.x + 975, self.window.y + 687)
 
         time.sleep(4)
-        brightness = get_pixel_brightness(self.window.x + 885, self.window.y + 354)
+        brightness = get_pixel_brightness(self.window.x + 1001, self.window.y + 373)
         if brightness < 127:
             print('Erro ao pegar missão\n')
             return
