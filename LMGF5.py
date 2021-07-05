@@ -286,10 +286,10 @@ class GuildFest:
         Mouse.set_pos(self.window.x + 542, self.window.y + 521)
 
         # waits for quest to appear. If it takes more than 10 seconds, move on because it most likely didn't appear
-        brightness = get_pixel_brightness(self.window.x + 885, self.window.y + 354)
+        brightness = get_pixel_brightness(self.window.x + 1001, self.window.y + 373)
         timer = time.perf_counter()
         while brightness < 127:
-            brightness = get_pixel_brightness(self.window.x + 885, self.window.y + 354)
+            brightness = get_pixel_brightness(self.window.x + 1001, self.window.y + 373)
             if time.perf_counter()-timer > 10:
                 break
         else:
@@ -304,7 +304,9 @@ class GuildFest:
         # checks if the current selected slot contais a quest
         brightness = get_pixel_brightness(self.window.x + 1001, self.window.y + 373)
         if brightness < 127:
+            print('not quest')
             return False
+        print('quest')
         return True
 
     def screenshot_quest(self):
@@ -358,7 +360,9 @@ def main():
                     check_slot = slot.number
                     break
                 elif active_timer > wait_timer and check_slot == slot.number:
+                    print("next quest in more than 5 min, sleeping... ")
                     time.sleep(active_timer - wait_timer)
+
 
                 # if time < wait_timer wait until game clock == slot target
                 clock = fg.memory.get_clock()
