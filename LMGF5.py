@@ -304,9 +304,9 @@ class GuildFest:
         # checks if the current selected slot contais a quest
         brightness = get_pixel_brightness(self.window.x + 1001, self.window.y + 373)
         if brightness < 127:
-            print('not quest')
+            # print('not quest')
             return False
-        print('quest')
+        # print('quest')
         return True
 
     def screenshot_quest(self):
@@ -360,7 +360,7 @@ def main():
                     check_slot = slot.number
                     break
                 elif active_timer > wait_timer and check_slot == slot.number:
-                    print("next quest in more than 5 min, sleeping... ")
+                    # print("next quest in more than 5 min, sleeping... ")
                     time.sleep(active_timer - wait_timer)
 
 
