@@ -21,7 +21,8 @@ class QuestDB(sqlite3.Connection):
             self.cur.execute(f'UPDATE quests2 SET selected = Null WHERE id IN {subquery}', quest_id_list)
 
     def get_quest_by_id(self, quest_id):
-        quest = list(self.cur.execute('SELECT * FROM quests2 WHERE id = ?', (quest_id,)).fetchone())
+        result = self.cur.execute('SELECT * FROM quests2 WHERE id = ?', (quest_id,)).fetchone()
+        quest = list(result)
         quest[1] = self.get_quest_name(quest[1])
         return quest
 
@@ -92,6 +93,18 @@ class QuestDB(sqlite3.Connection):
     def get_quest_points(self, qid):
         if qid:
             return self.cur.execute('SELECT points FROM quests2 WHERE id = ?', (qid, )).fetchone()[0]
+
+    def insert_new_quest(self, details, name):
+        last_name_id = self.cur.execute("SELECT id FROM quest_names ORDER BY id DESC").fetchone()[0]
+        
+
+        last_id = self.cur.execute("SELECT id FROM quests2 ORDER BY id DESC").fetchone()[0]
+        new_data = [last_id + 1, last_name_id + 1, *details, None, None, 14, 30, 35]
+
+        with self:
+            self.cur.execute('INSERT INTO quest_names VALUES (?, ?, ?)', (last_name_id + 1, name, name))
+            self.cur.execute('INSERT INTO quests2 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', new_data)
+
 
 
 class HistoryDB(sqlite3.Connection):
