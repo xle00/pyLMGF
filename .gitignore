@@ -3,8 +3,7 @@ history.txt
 __pycache__/
 venv/
 history.db-journal
-data/history.db
+data/
 get_names.py
 names.db
 v6/
-data/
