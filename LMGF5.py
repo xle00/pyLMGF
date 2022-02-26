@@ -5,7 +5,8 @@ from lib.databases import QuestDB, HistoryDB, LocalDB
 from mss import mss
 from PIL import ImageGrab
 import os
-from lib import pushbullet
+# from lib import pushbullet
+from lib import repl_db
 import sys
 from lib.functions import game_registry_search
 from lib.configs import load_game_languages, load_configs, Pointers
@@ -37,7 +38,7 @@ if load_configs()['pointers_from_github']:
     Pointers.get_pointers()
 
 
-pb = pushbullet.PushBullet()
+#pb = pushbullet.PushBullet()
 sct = mss()
 hist = HistoryDB()
 db = QuestDB()
@@ -198,6 +199,7 @@ class GuildFest:
             time.sleep(.1)
             if self.is_quest():
                 self.identify_quest()
+
             else:
                 self.get_timer()
 
@@ -210,14 +212,20 @@ class GuildFest:
         details = self.memory.get_mission_details()
         name = self.memory.get_quest_name()
         qid = db.identify_quest(*details, name)
+        if not qid:
+            # print(f"----------------- {details} {name} ------------------")
+            self.screenshot_quest()
+            self.pushbullet(f"{name} - {details}")
+            os.remove('temp.jpeg')
+            db.insert_new_quest(details, name)
 
         slot.timer = None
         slot.target = None
         slot.qid = qid
 
         # save_history(hist.get_highest_sid(), self.current_slot, time.time() - start)
-
-        print(self.get_quest_name(slot.qid), name)
+        if qid:
+            print(self.get_quest_name(slot.qid), name)
         if self.is_selected(slot.qid):
             self.get_the_quest()
 
@@ -245,9 +253,9 @@ class GuildFest:
         # gets the quest and exits the program
         Mouse.left_click(self.window.x + 975, self.window.y + 687)
 
-        time.sleep(4)
-        brightness = get_pixel_brightness(self.window.x + 1001, self.window.y + 373)
-        if brightness < 127:
+        time.sleep(3)
+        brightness = get_pixel_brightness(self.window.x + 1150, self.window.y + 600)
+        if brightness > 50:
             print('Erro ao pegar missão\n')
             return
 
@@ -257,11 +265,22 @@ class GuildFest:
 
         handle_close()
 
-    def pushbullet(self):
-        # notifies the user on pushbullet
-        text = f'{self.get_quest_name(self.current_slot.qid)} {self.memory.get_player_name()}'
-        pb.push_img('temp.jpeg', title=text)
-        pb.push_img('temp.jpeg', email='thallesrafael1402@gmail.com', title=text)
+    # def pushbullet(self, msg=None):
+    #     # notifies the user on pushbullet
+    #     if msg:
+    #         text=msg
+    #     else:
+    #         text = f'{self.get_quest_name(self.current_slot.qid)} {self.memory.get_player_name()}'
+    #     pb.push_img('temp.jpeg', title=text)
+    #     pb.push_img('temp.jpeg', email='thallesrafael1402@gmail.com', title=text)
+
+    def pushbullet(self, msg=None):
+        if msg:
+            text=msg
+        else:
+            text = f'{self.get_quest_name(self.current_slot.qid)} {self.memory.get_player_name()}'
+        repl_db.add_message(text, 'temp.jpeg')
+
 
     def sort_slots(self):
         # sort slots based on time to appear
@@ -311,7 +330,7 @@ class GuildFest:
 
     def screenshot_quest(self):
         # take a screenshot of the quest
-        img = ImageGrab.grab(bbox=(self.window.x + 764, self.window.y + 329, self.window.x + 1114, self.window.y + 622))
+        img = ImageGrab.grab(bbox=(self.window.x + 840, self.window.y + 333, self.window.x + 1191, self.window.y + 633))
         img.save('temp.jpeg')
 
 
