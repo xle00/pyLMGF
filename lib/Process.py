@@ -1,5 +1,6 @@
 import ctypes
-import win32gui, win32con
+from win32 import win32gui
+import win32con
 from time import sleep
 
 
